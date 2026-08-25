@@ -448,3 +448,299 @@ function generate_term_report_card_excel($input) {
 
     return $spreadsheet;
 }
+
+/**
+ * Ports src/lib/final-report-card-excel.ts::generateFinalExcel — same
+ * per-student worksheet layout as generate_term_report_card_excel(), but
+ * combines marks across every term (TERM 1 / TERM 2 / AVG columns instead
+ * of a single report's exam columns) and adds a RANK/PROMOTION/REOPENS ON
+ * summary row sourced from the persisted final totals.
+ *
+ * $input keys: students (from get_final_report_card_data, pre-filtered to
+ * the selected ids), schedule, orderedSubjects, hics (stdClass keyed by
+ * subid), grandThic, reopenText, comments, watermarkBase64, watermarkSize,
+ * headerConfig ({includeSchool, includeBranch, includeWatermark, includeSignatures})
+ */
+function generate_final_report_card_excel($input) {
+    $students = $input['students'];
+    $schedule = $input['schedule'];
+    $orderedSubjects = $input['orderedSubjects'];
+    $hics = $input['hics'];
+    $grandThic = $input['grandThic'];
+    $reopenText = $input['reopenText'];
+    $comments = $input['comments'];
+    $headerConfig = $input['headerConfig'];
+    $watermarkBase64 = $input['watermarkBase64'] ?? null;
+    $watermarkSize = $input['watermarkSize'] ?? 350;
+
+    $gridEndCol = 26;
+
+    $watermarkData = null;
+    if ($watermarkBase64) {
+        $parts = explode(',', $watermarkBase64, 2);
+        $watermarkData = base64_decode($parts[1] ?? $parts[0]);
+    } else {
+        $logoPath = __DIR__ . '/../assets/images/logo.gif';
+        if (is_file($logoPath)) {
+            $watermarkData = file_get_contents($logoPath);
+        }
+    }
+    $gdWatermarkImage = $watermarkData ? @imagecreatefromstring($watermarkData) : false;
+
+    $spreadsheet = new Spreadsheet();
+    $spreadsheet->removeSheetByIndex(0);
+    $sheetIndex = 0;
+
+    foreach ($students as $student) {
+        $sheetName = preg_replace('/[\\\\\/\*\?:\[\]]/', '', substr($student['roll'] . '-' . $student['sname'], 0, 31));
+        if ($sheetName === '') {
+            $sheetName = 'Student' . $student['sid'];
+        }
+
+        $sheet = $spreadsheet->createSheet($sheetIndex++);
+        $sheet->setTitle($sheetName);
+
+        $pageSetup = $sheet->getPageSetup();
+        $pageSetup->setOrientation(PageSetup::ORIENTATION_LANDSCAPE);
+        $pageSetup->setPaperSize(PageSetup::PAPERSIZE_LETTER);
+        $pageSetup->setFitToPage(true);
+        $pageSetup->setFitToWidth(1);
+        $pageSetup->setFitToHeight(1);
+        $margins = $sheet->getPageMargins();
+        $margins->setLeft(0.2);
+        $margins->setRight(0.2);
+        $margins->setTop(0.3);
+        $margins->setBottom(0.3);
+        $margins->setHeader(0.0);
+        $margins->setFooter(0.0);
+
+        for ($i = 1; $i <= $gridEndCol; $i++) {
+            $width = ($i === 1) ? 2.0 : (($i === 22) ? 1.0 : 5.0);
+            $sheet->getColumnDimension(rc_col_letter($i))->setWidth($width);
+        }
+        for ($i = 1; $i <= 35; $i++) {
+            $sheet->getRowDimension($i)->setRowHeight($i === 7 ? 5.0 : 21.0);
+        }
+
+        rc_merge_set($sheet, 1, 2, $gridEndCol, $headerConfig['includeSchool'] ? 'DR. VIRENDRA SWARUP EDUCATION CENTRE' : '', ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 24, 'halign' => Alignment::HORIZONTAL_CENTER, 'valign' => Alignment::VERTICAL_CENTER]);
+        rc_merge_set($sheet, 2, 2, $gridEndCol, $headerConfig['includeBranch'] ? 'AVADHPURI, KANPUR' : '', ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 20, 'halign' => Alignment::HORIZONTAL_CENTER, 'valign' => Alignment::VERTICAL_CENTER]);
+
+        if ($gdWatermarkImage !== false && !empty($headerConfig['includeWatermark'])) {
+            try {
+                $drawing = new MemoryDrawing();
+                $drawing->setImageResource($gdWatermarkImage);
+                $drawing->setRenderingFunction(MemoryDrawing::RENDERING_DEFAULT);
+                $drawing->setMimeType(MemoryDrawing::MIMETYPE_DEFAULT);
+                $drawing->setCoordinates('G6');
+                $drawing->setWidth($watermarkSize);
+                $drawing->setHeight($watermarkSize);
+                $drawing->setWorksheet($sheet);
+            } catch (Throwable $e) {
+                // Non-fatal, matches source's swallowed try/catch.
+            }
+        }
+
+        $attendance = $student['snapshot']['attendance'] ?? null;
+        $headerGrid = [
+            ['r' => 3, 'items' => [[2, 5, true, 'SCHOLAR NO.'], [6, 21, true, 'NAME'], [22, 26, true, 'CLASS']]],
+            ['r' => 4, 'items' => [[2, 5, false, $student['schno'] ?? ''], [6, 21, false, $student['sname']], [22, 26, false, rc_roman_numeral($student['sclass'] ?? '')]]],
+            ['r' => 5, 'items' => [[2, 5, true, 'TERM/YEAR'], [6, 9, true, 'ATTENDANCE'], [10, 13, true, 'D.O.B.'], [14, 17, true, 'HOUSE'], [18, 21, true, 'WEIGHT'], [22, 26, true, 'HEIGHT']]],
+            ['r' => 6, 'items' => [
+                [2, 5, false, 'FINAL ' . date('Y')],
+                [6, 9, false, ($attendance['attendance'] ?? 'N/A') . ' / ' . ($attendance['totalattendance'] ?? 'N/A')],
+                [10, 13, false, $student['dob'] ?? ''],
+                [14, 17, false, $student['house'] ?? 'N/A'],
+                [18, 21, false, ($student['wt'] ?? '') . ' Kg.'],
+                [22, 26, false, ($student['ht'] ?? '') . ' Cm.'],
+            ]],
+        ];
+        foreach ($headerGrid as $row) {
+            foreach ($row['items'] as [$s, $e, $isLabel, $val]) {
+                rc_merge_set($sheet, $row['r'], $s, $e, $val, [
+                    'bold' => $isLabel, 'color' => $isLabel ? RC_THEME_COLOR : RC_DATA_COLOR, 'size' => 13,
+                    'halign' => Alignment::HORIZONTAL_CENTER, 'valign' => Alignment::VERTICAL_CENTER, 'border' => 'all',
+                ]);
+            }
+        }
+
+        rc_merge_set($sheet, 8, 2, 6, 'SUBJECTS', ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
+
+        $metrics = [
+            ['label' => 'MM', 'start' => 7],
+            ['label' => 'TERM 1', 'start' => 10],
+            ['label' => 'TERM 2', 'start' => 13],
+            ['label' => 'AVG', 'start' => 16],
+            ['label' => 'HIC', 'start' => 19],
+        ];
+        foreach ($metrics as $m) {
+            rc_merge_set($sheet, 8, $m['start'], $m['start'] + 2, $m['label'], ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
+        }
+
+        $studentMarksByTermschid = [];
+        foreach ($student['marks'] as $m) {
+            if ($m['marks'] !== null) {
+                $studentMarksByTermschid[(int) $m['termschid']] = (int) $m['marks'];
+            }
+        }
+
+        $activeSubjects = array_values(array_filter($orderedSubjects, function ($sub) use ($schedule, $studentMarksByTermschid) {
+            foreach ($schedule as $sch) {
+                if ((int) $sch['subid'] === (int) $sub['subid'] && isset($studentMarksByTermschid[(int) $sch['termschid']])) {
+                    return true;
+                }
+            }
+            return false;
+        }));
+
+        $getObt = function ($subid, $termid) use ($schedule, $studentMarksByTermschid) {
+            $found = false;
+            $obt = 0;
+            foreach ($schedule as $sch) {
+                if ((int) $sch['subid'] === (int) $subid && (int) $sch['termid'] === (int) $termid) {
+                    $tsid = (int) $sch['termschid'];
+                    if (isset($studentMarksByTermschid[$tsid])) {
+                        $obt += $studentMarksByTermschid[$tsid];
+                        $found = true;
+                    }
+                }
+            }
+            return $found ? $obt : null;
+        };
+
+        $mmSum = 0;
+        $t1Sum = 0;
+        $t2Sum = 0;
+        $avgSum = 0;
+
+        for ($rIdx = 9; $rIdx <= 20; $rIdx++) {
+            $sub = $activeSubjects[$rIdx - 9] ?? null;
+            $isLastInGrid = $rIdx === 20;
+            $borderSides = $isLastInGrid ? ['left', 'right', 'bottom'] : ['left', 'right'];
+
+            $sheet->mergeCells(rc_range($rIdx, 2, 6));
+            foreach ([7, 10, 13, 16, 19] as $colStart) {
+                $sheet->mergeCells(rc_range($rIdx, $colStart, $colStart + 2));
+            }
+
+            $scRef = rc_col_letter(2) . $rIdx;
+            rc_style($sheet, $scRef, ['halign' => Alignment::HORIZONTAL_LEFT, 'indent' => 1, 'border' => $borderSides]);
+
+            if ($sub) {
+                $subid = (int) $sub['subid'];
+                $sheet->setCellValue($scRef, $sub['subname']);
+                rc_style($sheet, $scRef, ['color' => RC_THEME_COLOR, 'size' => 12]);
+
+                $t1 = $getObt($subid, 1);
+                $t2 = $getObt($subid, 2);
+                $avg = (int) round((($t1 ?: 0) + ($t2 ?: 0)) / 200 * 100);
+                $mmSum += 100;
+                $t1Sum += $t1 ?: 0;
+                $t2Sum += $t2 ?: 0;
+                $avgSum += $avg;
+
+                $hicKey = (string) $subid;
+                $rowMetrics = [
+                    [7, 100],
+                    [10, $t1 ?? ''],
+                    [13, $t2 ?? ''],
+                    [16, $avg],
+                    [19, $hics->$hicKey ?? ''],
+                ];
+                foreach ($rowMetrics as [$colStart, $val]) {
+                    $ref = rc_col_letter($colStart) . $rIdx;
+                    $sheet->setCellValue($ref, $val);
+                    rc_style($sheet, $ref, ['size' => 12, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
+                }
+            } else {
+                $sheet->setCellValue($scRef, '');
+                foreach ([7, 10, 13, 16, 19] as $colStart) {
+                    $ref = rc_col_letter($colStart) . $rIdx;
+                    rc_style($sheet, $ref, ['halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
+                }
+            }
+        }
+
+        $tR = 21;
+        rc_merge_set($sheet, $tR, 2, 6, 'TOTAL', ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_RIGHT, 'border' => 'all']);
+        $totMetrics = [[7, $mmSum], [10, $t1Sum], [13, $t2Sum], [16, $avgSum], [19, (int) round($grandThic)]];
+        foreach ($totMetrics as [$colStart, $val]) {
+            rc_merge_set($sheet, $tR, $colStart, $colStart + 2, $val, ['bold' => true, 'size' => 12, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
+        }
+
+        $sS = 23;
+        $sE = 26;
+        $setupSidebarHeader = function ($r, $label) use ($sheet, $sS, $sE) {
+            rc_merge_set($sheet, $r, $sS, $sE, $label, ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
+        };
+
+        $setupSidebarHeader(8, 'PERCENTAGE');
+        $activeCount = count($activeSubjects);
+        $finalPercentText = ($mmSum > 0 && $activeCount > 0) ? number_format(($avgSum / ($activeCount * 100)) * 100, 2) . '%' : 'N/A';
+        rc_merge_set($sheet, 9, $sS, $sE, $finalPercentText, ['bold' => true, 'size' => 12, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
+
+        $setupSidebarHeader(10, 'LEGEND');
+        $sheet->mergeCells(rc_col_letter($sS) . '11:' . rc_col_letter($sE) . '13');
+        $legendRef = rc_col_letter($sS) . '11';
+        $sheet->setCellValue($legendRef, "A - 80% and above\nB - 60 - 79%\nC - 40 - 59%\nD - Below 40%");
+        rc_style($sheet, $legendRef, ['color' => RC_THEME_COLOR, 'size' => 10, 'wrap' => true, 'indent' => 1, 'border' => 'all']);
+
+        $setupSidebarHeader(15, 'GRADE SUBJECTS');
+        $studentGradesList = $student['snapshot']['grades'] ?? [];
+        for ($i = 0; $i < 6; $i++) {
+            $r = 16 + $i;
+            $g = $studentGradesList[$i] ?? null;
+            $isLastRow = $i === 5;
+            $sheet->mergeCells(rc_range($r, $sS, $sE - 1));
+            $nameRef = rc_col_letter($sS) . $r;
+            $valRef = rc_col_letter($sE) . $r;
+            if ($g) {
+                $sheet->setCellValue($nameRef, $g['subname']);
+                $sheet->setCellValue($valRef, $g['grade']);
+            }
+            rc_style($sheet, $nameRef, ['size' => 11, 'halign' => Alignment::HORIZONTAL_LEFT, 'indent' => 1, 'border' => $isLastRow ? ['left', 'bottom'] : ['left']]);
+            rc_style($sheet, $valRef, ['size' => 11, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => $isLastRow ? ['right', 'bottom'] : ['right']]);
+        }
+
+        $finalTotal = $student['snapshot']['total'] ?? null;
+        $summaryItems = [
+            ['r1' => [23, 2, 5], 'r2' => [24, 2, 5], 'label' => 'RANK', 'value' => $finalTotal['rank'] ?? 'N/A'],
+            ['r1' => [23, 6, 21], 'r2' => [24, 6, 21], 'label' => 'PROMOTION', 'value' => $finalTotal['status'] ?? ''],
+            ['r1' => [23, 22, 26], 'r2' => [24, 22, 26], 'label' => 'REOPENS ON', 'value' => $reopenText ?: ''],
+        ];
+        foreach ($summaryItems as $item) {
+            rc_merge_set($sheet, $item['r1'][0], $item['r1'][1], $item['r1'][2], $item['label'], ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_CENTER, 'valign' => Alignment::VERTICAL_CENTER, 'border' => 'all']);
+            rc_merge_set($sheet, $item['r2'][0], $item['r2'][1], $item['r2'][2], $item['value'], ['size' => 12, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
+        }
+
+        $studentComment = null;
+        $comid = $attendance['comid'] ?? null;
+        if ($comid !== null) {
+            foreach ($comments as $c) {
+                if ((int) $c['comid'] === (int) $comid) { $studentComment = $c; break; }
+            }
+        }
+        if ($studentComment && !empty(trim($studentComment['comment'] ?? '')) && trim($studentComment['comment']) !== '_') {
+            $cR = 26;
+            $sheet->setCellValue('B' . $cR, 'COMMENT:');
+            rc_style($sheet, 'B' . $cR, ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_LEFT]);
+            $sheet->mergeCells('E' . $cR . ':' . rc_col_letter($gridEndCol) . ($cR + 2));
+            $sheet->setCellValue('E' . $cR, $studentComment['comment']);
+            rc_style($sheet, 'E' . $cR, ['size' => 11, 'wrap' => true, 'valign' => Alignment::VERTICAL_TOP]);
+        }
+
+        $sigR = 32;
+        if (!empty($headerConfig['includeSignatures'])) {
+            $sheet->setCellValue('B' . $sigR, 'CLASS TEACHER');
+            rc_style($sheet, 'B' . $sigR, ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12]);
+            $sheet->mergeCells(rc_col_letter($gridEndCol - 2) . $sigR . ':' . rc_col_letter($gridEndCol) . $sigR);
+            $sheet->setCellValue(rc_col_letter($gridEndCol - 2) . $sigR, 'PRINCIPAL');
+            rc_style($sheet, rc_col_letter($gridEndCol - 2) . $sigR, ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_RIGHT]);
+        } else {
+            $sheet->mergeCells('B' . $sigR . ':' . rc_col_letter($gridEndCol) . $sigR);
+            $sheet->setCellValue('B' . $sigR, 'This is a computer generated document. No signature is required.');
+            rc_style($sheet, 'B' . $sigR, ['italic' => true, 'size' => 11, 'color' => 'FF666666', 'halign' => Alignment::HORIZONTAL_CENTER]);
+        }
+    }
+
+    return $spreadsheet;
+}

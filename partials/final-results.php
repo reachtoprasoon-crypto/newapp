@@ -39,7 +39,7 @@
     <button class="btn btn-outline-secondary btn-sm" id="btnExportPromotion"><i class="fa-solid fa-file-excel me-1"></i>Export Excel</button>
   </div>
 
-  <!-- Report Cards (per-student link generator) -->
+  <!-- Report Cards (per-student link generator + Excel export) -->
   <div id="fr_reportcards" style="display:none;">
     <div class="row g-2 mb-3 align-items-end">
       <div class="col-6 col-md-3">
@@ -56,10 +56,18 @@
     </div>
     <div class="table-responsive">
       <table class="table table-sm table-hover align-middle">
-        <thead><tr><th>Roll</th><th>Name</th><th></th></tr></thead>
+        <thead><tr><th><input type="checkbox" id="fr_selectAllStudents"></th><th>Roll</th><th>Name</th><th></th></tr></thead>
         <tbody id="fr_studentsBody"></tbody>
       </table>
     </div>
+
+    <div class="row g-2 mb-3">
+      <div class="col-6 col-md-3"><div class="form-check"><input class="form-check-input" type="checkbox" id="fr_includeSchool" checked><label class="form-check-label small" for="fr_includeSchool">Include School Name</label></div></div>
+      <div class="col-6 col-md-3"><div class="form-check"><input class="form-check-input" type="checkbox" id="fr_includeBranch" checked><label class="form-check-label small" for="fr_includeBranch">Include Branch</label></div></div>
+      <div class="col-6 col-md-3"><div class="form-check"><input class="form-check-input" type="checkbox" id="fr_includeWatermark" checked><label class="form-check-label small" for="fr_includeWatermark">Include Watermark</label></div></div>
+      <div class="col-6 col-md-3"><div class="form-check"><input class="form-check-input" type="checkbox" id="fr_includeSignatures" checked><label class="form-check-label small" for="fr_includeSignatures">Include Signatures</label></div></div>
+    </div>
+    <button class="btn btn-secondary btn-sm" id="btnExportFinalReportCards"><i class="fa-solid fa-file-excel me-1"></i>Export Excel (one sheet per student)</button>
   </div>
 </div>
 

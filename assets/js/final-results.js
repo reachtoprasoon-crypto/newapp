@@ -119,14 +119,43 @@
         ajaxCall({ url: '/api/students/list.php', method: 'GET', data: { sclass: sclass }, silent: true })
             .then(function (students) {
                 const tbody = $('#fr_studentsBody').empty();
+                $('#fr_selectAllStudents').prop('checked', true);
                 students.forEach(function (s) {
                     const row = $('<tr>');
+                    row.append($('<td>').html('<input type="checkbox" class="fr-student-check" data-sid="' + s.sid + '" checked>'));
                     row.append($('<td>').text(s.roll));
                     row.append($('<td>').text(s.sname));
                     row.append($('<td>').html('<button class="btn btn-sm btn-outline-primary btn-final-report-card" data-sid="' + s.sid + '">View Final Report Card</button>'));
                     tbody.append(row);
                 });
             });
+    }
+
+    function exportFinalReportCards() {
+        const sclass = $('#fr_class').val();
+        const termid = $('#fr_term').val();
+        const report = $('#fr_report').val();
+        if (!sclass || !termid || !report) {
+            toastError('Select class, term and report first.');
+            return;
+        }
+        const sids = $('.fr-student-check:checked').map(function () { return $(this).data('sid'); }).get();
+        if (sids.length === 0) {
+            toastError('Select at least one student.');
+            return;
+        }
+        const params = {
+            sclass: sclass,
+            termid: termid,
+            report: report,
+            sids: sids.join(','),
+            includeSchool: $('#fr_includeSchool').is(':checked') ? '1' : '0',
+            includeBranch: $('#fr_includeBranch').is(':checked') ? '1' : '0',
+            includeWatermark: $('#fr_includeWatermark').is(':checked') ? '1' : '0',
+            includeSignatures: $('#fr_includeSignatures').is(':checked') ? '1' : '0',
+        };
+        const query = Object.keys(params).map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); }).join('&');
+        window.location.href = BASE_URL + '/api/final-results/export_excel.php?' + query;
     }
 
     $('#frSubNav').on('click', 'a', function (e) {
@@ -147,6 +176,14 @@
         const report = $('#fr_report').val();
         window.open(BASE_URL + '/final_report_card.php?sid=' + sid + '&termid=' + termid + '&report=' + report, '_blank');
     });
+    $('#fr_selectAllStudents').on('change', function () {
+        $('.fr-student-check').prop('checked', $(this).is(':checked'));
+    });
+    $('#fr_studentsBody').on('change', '.fr-student-check', function () {
+        if (!$(this).is(':checked')) $('#fr_selectAllStudents').prop('checked', false);
+        else if ($('.fr-student-check:not(:checked)').length === 0) $('#fr_selectAllStudents').prop('checked', true);
+    });
+    $('#btnExportFinalReportCards').on('click', exportFinalReportCards);
 
     populateSelects();
 })();
