@@ -14,7 +14,10 @@
   <div id="dc_responsesArea" class="d-none mt-4">
     <div class="d-flex justify-content-between align-items-center mb-2">
       <h6 class="mb-0">Responses: <span id="dc_responsesTitle"></span></h6>
-      <button class="btn btn-outline-secondary btn-sm" id="btnCloseResponses">Close</button>
+      <div class="d-flex gap-2">
+        <button class="btn btn-success btn-sm" id="btnExportResponses"><i class="fa-solid fa-file-excel me-1"></i>Download Excel</button>
+        <button class="btn btn-outline-secondary btn-sm" id="btnCloseResponses">Close</button>
+      </div>
     </div>
     <div class="table-responsive">
       <table class="table table-sm" id="dc_responsesTable">

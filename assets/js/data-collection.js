@@ -1,4 +1,6 @@
 (function () {
+    let currentResponsesFormId = null;
+
     function escapeHtml(s) {
         return $('<div>').text(s == null ? '' : s).html();
     }
@@ -87,6 +89,7 @@
     }
 
     function viewResponses(formId, title) {
+        currentResponsesFormId = formId;
         ajaxCall({ url: '/api/data-collection/list_responses.php', method: 'GET', data: { form_id: formId }, silent: true })
             .then(function (responses) {
                 $('#dc_responsesTitle').text(title);
@@ -139,6 +142,10 @@
         navigator.clipboard.writeText(link).then(function () { toastSuccess('Link copied.'); });
     });
     $('#btnCloseResponses').on('click', function () { $('#dc_responsesArea').addClass('d-none'); });
+    $('#btnExportResponses').on('click', function () {
+        if (!currentResponsesFormId) return;
+        window.location.href = BASE_URL + '/api/data-collection/export_responses.php?form_id=' + currentResponsesFormId;
+    });
     $('#dc_responsesBody').on('click', '.btn-delete-response', function () {
         const id = $(this).data('id');
         const $row = $(this).closest('tr');
