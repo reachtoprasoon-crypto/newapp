@@ -20,6 +20,7 @@ function get_nav_tabs_for_role($ttype) {
             ['slug' => 'aptitude', 'label' => 'Aptitude', 'icon' => 'fa-brain'],
             ['slug' => 'communications', 'label' => 'Communications', 'icon' => 'fa-bullhorn'],
             ['slug' => 'data-collection', 'label' => 'Data Collection', 'icon' => 'fa-clipboard-list'],
+            ['slug' => 'tc', 'label' => 'Issue TC', 'icon' => 'fa-file-export'],
             ['slug' => 'activity-log', 'label' => 'Activity Log', 'icon' => 'fa-clock-rotate-left'],
             ['slug' => 'controls', 'label' => 'Controls', 'icon' => 'fa-sliders'],
         ];
