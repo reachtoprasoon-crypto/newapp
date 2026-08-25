@@ -10,6 +10,7 @@ require_once __DIR__ . '/../../lib/final_results.php';
 require_once __DIR__ . '/../../lib/roster_excel.php';
 
 require_login_page();
+set_time_limit(300);
 $user = current_user();
 if ($user['type'] !== 'staff') {
     http_response_code(403);

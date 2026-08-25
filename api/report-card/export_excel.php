@@ -15,6 +15,7 @@ require_once __DIR__ . '/../../lib/controls.php';
 require_once __DIR__ . '/../../lib/report_card_excel.php';
 
 require_login_page();
+set_time_limit(300);
 
 $sclass = trim($_GET['sclass'] ?? '');
 $termid = isset($_GET['termid']) ? (int) $_GET['termid'] : 0;

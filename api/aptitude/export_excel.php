@@ -13,6 +13,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 require_login_page();
+set_time_limit(300);
 if ((int) current_user()['ttype'] !== 10) {
     http_response_code(403);
     die('Forbidden.');

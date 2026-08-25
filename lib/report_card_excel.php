@@ -124,6 +124,8 @@ function generate_term_report_card_excel($input) {
         }
     }
 
+    $gdWatermarkImage = $watermarkData ? @imagecreatefromstring($watermarkData) : false;
+
     preg_match('/\d+/', $selectedClass, $classNumMatch);
     $classNum = $classNumMatch ? (int) $classNumMatch[0] : 0;
     $useSeniorFormat = $classNum >= 9 && $classNum <= 12;
@@ -183,19 +185,16 @@ function generate_term_report_card_excel($input) {
         rc_merge_set($sheet, 1, 2, $gridEndCol, $headerConfig['includeSchool'] ? 'DR. VIRENDRA SWARUP EDUCATION CENTRE' : '', ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 24, 'halign' => Alignment::HORIZONTAL_CENTER, 'valign' => Alignment::VERTICAL_CENTER]);
         rc_merge_set($sheet, 2, 2, $gridEndCol, $headerConfig['includeBranch'] ? 'AVADHPURI, KANPUR' : '', ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 20, 'halign' => Alignment::HORIZONTAL_CENTER, 'valign' => Alignment::VERTICAL_CENTER]);
 
-        if ($watermarkData && !empty($headerConfig['includeWatermark'])) {
+        if ($gdWatermarkImage !== false && !empty($headerConfig['includeWatermark'])) {
             try {
-                $gdImage = @imagecreatefromstring($watermarkData);
-                if ($gdImage !== false) {
-                    $drawing = new MemoryDrawing();
-                    $drawing->setImageResource($gdImage);
-                    $drawing->setRenderingFunction(MemoryDrawing::RENDERING_DEFAULT);
-                    $drawing->setMimeType(MemoryDrawing::MIMETYPE_DEFAULT);
-                    $drawing->setCoordinates('G6');
-                    $drawing->setWidth($watermarkSize);
-                    $drawing->setHeight($watermarkSize);
-                    $drawing->setWorksheet($sheet);
-                }
+                $drawing = new MemoryDrawing();
+                $drawing->setImageResource($gdWatermarkImage);
+                $drawing->setRenderingFunction(MemoryDrawing::RENDERING_DEFAULT);
+                $drawing->setMimeType(MemoryDrawing::MIMETYPE_DEFAULT);
+                $drawing->setCoordinates('G6');
+                $drawing->setWidth($watermarkSize);
+                $drawing->setHeight($watermarkSize);
+                $drawing->setWorksheet($sheet);
             } catch (Throwable $e) {
                 // Non-fatal, matches source's swallowed try/catch.
             }
