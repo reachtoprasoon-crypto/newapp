@@ -20,10 +20,10 @@ This project was built interactively over one long session, then paused delibera
 
 ## Stack
 
-- **Backend**: PHP 8.3, `mysqli` with prepared statements throughout
+- **Backend**: PHP 8.2 (both local XAMPP and production — see composer note below), `mysqli` with prepared statements throughout
 - **Frontend**: Bootstrap 5 + jQuery + DataTables + SweetAlert2, all via CDN — no build step
 - **Database**: MySQL, `vsecadlu_reportcard202667` (host `localhost`, user `root`, see `config.php`)
-- **Dependency management**: Composer installed locally as `composer.phar` in the project root (no system-wide install available on this host). `phpoffice/phpspreadsheet` is installed and used for real Excel-workbook generation (report cards); PHPWord/Dompdf not yet added — deferred until a feature needs them.
+- **Dependency management**: Composer installed locally as `composer.phar` in the project root (no system-wide install available on this host). `phpoffice/phpspreadsheet` for Excel-workbook generation (report cards) and `phpoffice/phpword` for DOCX generation (TC certificates) are both installed; Dompdf not yet added — deferred until a feature needs it. `phpoffice/phpspreadsheet`'s lock entry was originally resolved on a machine running PHP ≥ 8.3, which silently pulled in a sub-dependency (`maennchen/zipstream-php`) requiring 8.3 — both local and production run PHP 8.2, so that caused every export to fatal with Composer's platform_check until re-resolved from this machine. Always run `composer update`/`require` from here (with `--ignore-platform-req=ext-gd` only, since that extension is present at runtime but absent from the CLI's php.ini) rather than copying a lock file resolved elsewhere.
 
 ## Architecture
 
@@ -84,14 +84,14 @@ final_report_card.php     # print-friendly all-terms-combined report card
 - **Class roster**: marks + co-scholastic grades + attendance combined in one view/export per class/term/report, with failing-subject/failing-student highlighting (red/bold/underline) in the Excel export; also persists a HIC recompute as a side effect, matching the source
 - **Final roster export** and **promotion export**: styled Excel versions of the on-screen final-results screens (2-row merged subject-group headers, alternating row shading, failing-mark highlighting)
 - **Students Total**: school-wide grand-total leaderboard (Admin/Office), searchable, with Excel export
+- **Transfer Certificate (TC) issuance** (Admin only): archives a student's full snapshot into a new `tcissued` table and permanently deletes them from `students` (a real delete, not the class="13Z" soft-delete used elsewhere), then generates the printed certificate as a DOCX via PHPWord — server-side, unlike the source's client-side `docx` npm package. DOB-to-words for the form auto-fill is a client-side JS port (pure function, never touches the DB)
 
 ## What's deferred
 
 Not built yet, in roughly ascending order of effort/risk:
 
 - DB backup/reset tools, theme management, SMS/WhatsApp (stubs only in the source — nothing functional to port there)
-- TC (Transfer Certificate) issuance — needs number-to-words conversion + DOCX generation
-- Question paper / subjective paper authoring — needs webcam capture, a shared LaTeX-shorthand math parser, and DOCX export (PHPWord)
+- Question paper / subjective paper authoring — needs webcam capture, a shared LaTeX-shorthand math parser, and DOCX export (PHPWord is now already in the project from TC issuance, so just the parser/capture pieces remain)
 - Lesson planner + its AI-generation flow (needs a Gemini API key)
 - **Timetable subsystem** — settings/load/constraints CRUD is straightforward, but the auto-generation algorithm (`generateTimetableData()` in the source) is a from-scratch class-scheduling solver and the single highest-risk item in the whole app
 
@@ -113,6 +113,8 @@ See `/home/prasoon/.claude/projects/-var-www-html-firebase-to-php/memory/` for f
 ## Testing approach
 
 There's no automated test suite. Every write endpoint was manually verified against the live production data using the same discipline: snapshot the real rows, resubmit unchanged data to prove a no-op round-trips identically, mutate one value and confirm it applied, then restore the original snapshot and diff to confirm an exact match. Where no safe real target existed (e.g. copying a term schedule), a disposable, non-existent class code was used instead so production data was never at risk.
+
+**Exception**: TC issuance (`api/tc/issue.php`) permanently deletes the chosen student from `students` with no undo — there's no safe way to round-trip-test it against a real record the way everything else here was verified. Everything around it (last-serial/history endpoints, auth gating, DOCX generation from a hand-built record, the UI) was checked; the actual issue-and-delete path was only code-reviewed against the source, never executed. Treat the first real use of this feature as its first real test.
 
 ## Migration plan
 
