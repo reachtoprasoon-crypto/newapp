@@ -60,4 +60,4 @@
   </div>
 </div>
 
-<script src="/firebase_to_php/assets/js/data-collection.js"></script>
+<script src="/newapp/assets/js/data-collection.js"></script>

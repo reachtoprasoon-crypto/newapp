@@ -3,7 +3,7 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/lib/auth.php';
 
 if (is_logged_in()) {
-    header('Location: ' . (is_student() ? '/firebase_to_php/student_dashboard.php' : '/firebase_to_php/dashboard.php'));
+    header('Location: ' . (is_student() ? '/newapp/student_dashboard.php' : '/newapp/dashboard.php'));
     exit;
 }
 ?>
@@ -22,7 +22,7 @@ if (is_logged_in()) {
 <div class="login-card card shadow-sm">
   <div class="card-body p-4">
     <div class="text-center mb-3">
-      <img src="/firebase_to_php/assets/images/logo.gif" onerror="this.style.display='none'" alt="School Logo" width="48" height="48" class="rounded-circle mb-2">
+      <img src="/newapp/assets/images/logo.gif" onerror="this.style.display='none'" alt="School Logo" width="48" height="48" class="rounded-circle mb-2">
       <h5 class="fw-bold mb-1">Dr. Virendra Swarup Education Centre, Avadhpuri</h5>
       <div class="text-muted small">Enter your credentials to access the Portal</div>
     </div>
@@ -91,6 +91,6 @@ if (is_logged_in()) {
 </div>
 
 <?php include __DIR__ . '/partials/_assets_scripts.php'; ?>
-<script src="/firebase_to_php/assets/js/login.js"></script>
+<script src="/newapp/assets/js/login.js"></script>
 </body>
 </html>

@@ -14,4 +14,4 @@
   </div>
 </div>
 
-<script src="/firebase_to_php/assets/js/students-total.js"></script>
+<script src="/newapp/assets/js/students-total.js"></script>

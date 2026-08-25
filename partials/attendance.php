@@ -118,4 +118,4 @@
   </div>
 </div>
 
-<script src="/firebase_to_php/assets/js/attendance.js"></script>
+<script src="/newapp/assets/js/attendance.js"></script>

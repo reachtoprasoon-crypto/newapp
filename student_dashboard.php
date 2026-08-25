@@ -8,7 +8,7 @@ require_login_page();
 $user = current_user();
 
 if ($user['type'] !== 'student') {
-    header('Location: /firebase_to_php/dashboard.php');
+    header('Location: /newapp/dashboard.php');
     exit;
 }
 
@@ -29,13 +29,13 @@ $controls = get_all_controls($mysqli);
 
 <div class="app-header">
   <div class="d-flex align-items-center gap-3">
-    <img src="/firebase_to_php/assets/images/logo.gif" width="40" height="40" class="rounded-circle" alt="School Logo">
+    <img src="/newapp/assets/images/logo.gif" width="40" height="40" class="rounded-circle" alt="School Logo">
     <div>
       <div class="school-name">Dr. Virendra Swarup Education Centre, Avadhpuri</div>
       <div class="welcome-line">Welcome, <strong><?= htmlspecialchars($user['sname']) ?></strong> &middot; Class <?= htmlspecialchars($user['sclass']) ?></div>
     </div>
   </div>
-  <a href="/firebase_to_php/logout.php" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-right-from-bracket me-1"></i>Logout</a>
+  <a href="/newapp/logout.php" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-right-from-bracket me-1"></i>Logout</a>
 </div>
 
 <div class="app-shell p-4">

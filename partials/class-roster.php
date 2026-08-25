@@ -31,4 +31,4 @@
   </div>
 </div>
 
-<script src="/firebase_to_php/assets/js/class-roster.js"></script>
+<script src="/newapp/assets/js/class-roster.js"></script>

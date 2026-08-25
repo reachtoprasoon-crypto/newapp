@@ -63,4 +63,4 @@
   </div>
 </div>
 
-<script src="/firebase_to_php/assets/js/final-results.js"></script>
+<script src="/newapp/assets/js/final-results.js"></script>

@@ -88,4 +88,4 @@
   </div>
 </div>
 
-<script src="/firebase_to_php/assets/js/teachers.js"></script>
+<script src="/newapp/assets/js/teachers.js"></script>

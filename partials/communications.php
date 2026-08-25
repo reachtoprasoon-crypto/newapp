@@ -67,4 +67,4 @@
   </div>
 </div>
 
-<script src="/firebase_to_php/assets/js/communications.js"></script>
+<script src="/newapp/assets/js/communications.js"></script>

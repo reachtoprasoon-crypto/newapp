@@ -24,7 +24,7 @@ function is_staff() {
 // Page-context guard: redirects to login on failure. Call at the top of dashboard pages.
 function require_login_page() {
     if (!is_logged_in()) {
-        header('Location: /firebase_to_php/login.php');
+        header('Location: /newapp/login.php');
         exit;
     }
 }
@@ -33,7 +33,7 @@ function require_staff_role_page($allowedTtypes) {
     require_login_page();
     $user = current_user();
     if ($user['type'] !== 'staff' || !in_array((int) $user['ttype'], $allowedTtypes, true)) {
-        header('Location: /firebase_to_php/login.php');
+        header('Location: /newapp/login.php');
         exit;
     }
 }

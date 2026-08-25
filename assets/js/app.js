@@ -4,7 +4,7 @@
 // success/error toasts around that envelope, replacing the per-component
 // isLoading/useToast boilerplate in the source React app.
 
-const BASE_URL = '/firebase_to_php';
+const BASE_URL = '/newapp';
 
 function showLoading() {
     $('#loading-overlay').show();

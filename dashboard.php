@@ -9,7 +9,7 @@ require_login_page();
 $user = current_user();
 
 if ($user['type'] === 'student') {
-    header('Location: /firebase_to_php/student_dashboard.php');
+    header('Location: /newapp/student_dashboard.php');
     exit;
 }
 
@@ -49,13 +49,13 @@ $navTabs = get_nav_tabs_for_role($ttype);
 
 <div class="app-header">
   <div class="d-flex align-items-center gap-3">
-    <img src="/firebase_to_php/assets/images/logo.gif" width="40" height="40" class="rounded-circle" alt="School Logo">
+    <img src="/newapp/assets/images/logo.gif" width="40" height="40" class="rounded-circle" alt="School Logo">
     <div>
       <div class="school-name">Dr. Virendra Swarup Education Centre, Avadhpuri</div>
       <div class="welcome-line">Welcome, <strong><?= htmlspecialchars($user['tname']) ?></strong> &middot; <?= htmlspecialchars($roleLabel) ?></div>
     </div>
   </div>
-  <a href="/firebase_to_php/logout.php" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-right-from-bracket me-1"></i>Logout</a>
+  <a href="/newapp/logout.php" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-right-from-bracket me-1"></i>Logout</a>
 </div>
 
 <div class="app-shell">
@@ -91,6 +91,6 @@ $navTabs = get_nav_tabs_for_role($ttype);
     comments: <?= json_encode($comments) ?>,
   };
 </script>
-<script src="/firebase_to_php/assets/js/dashboard.js"></script>
+<script src="/newapp/assets/js/dashboard.js"></script>
 </body>
 </html>

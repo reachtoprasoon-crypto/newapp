@@ -66,4 +66,4 @@
   </div>
 </div>
 
-<script src="/firebase_to_php/assets/js/report-cards.js"></script>
+<script src="/newapp/assets/js/report-cards.js"></script>

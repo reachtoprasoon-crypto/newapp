@@ -183,4 +183,4 @@
   </div>
 </div>
 
-<script src="/firebase_to_php/assets/js/students.js"></script>
+<script src="/newapp/assets/js/students.js"></script>
