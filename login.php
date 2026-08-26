@@ -1,14 +1,17 @@
 <?php
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/lib/auth.php';
+require_once __DIR__ . '/lib/theme.php';
 
 if (is_logged_in()) {
     header('Location: ' . (is_student() ? '/newapp/student_dashboard.php' : '/newapp/dashboard.php'));
     exit;
 }
+
+$themeMode = is_dark_theme($mysqli) ? 'dark' : 'light';
 ?>
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme="<?= $themeMode ?>">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">

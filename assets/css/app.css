@@ -111,6 +111,45 @@ body {
     }
 }
 
+/* Dark theme (data-bs-theme="dark" on <html>, set server-side from the
+   `Default Theme` control). Bootstrap 5.3's own components (cards, tables,
+   modals, forms, nav-tabs) re-theme automatically — only this app's own
+   hardcoded-color classes need explicit overrides. Third-party widgets
+   (DataTables' own chrome, SweetAlert2 popups) are not re-themed. */
+[data-bs-theme="dark"] body {
+    background-color: #16181b;
+}
+
+[data-bs-theme="dark"] .app-header {
+    background: #1f2226;
+    border-bottom-color: #32363b;
+}
+
+[data-bs-theme="dark"] .app-header .school-name {
+    color: #e9ecef;
+}
+
+[data-bs-theme="dark"] .app-shell {
+    background: #1f2226;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+[data-bs-theme="dark"] #loading-overlay {
+    background: rgba(0, 0, 0, 0.6);
+}
+
+[data-bs-theme="dark"] .app-nav .navbar-collapse {
+    border-top-color: #32363b;
+}
+
+[data-bs-theme="dark"] .app-nav .nav-tabs .nav-link {
+    border-bottom-color: #32363b;
+}
+
+[data-bs-theme="dark"] .app-nav .nav-tabs .nav-link.active {
+    background-color: #16181b;
+}
+
 /* General small-screen comfort: tighter chrome so content gets more room. */
 @media (max-width: 575.98px) {
     .app-header {

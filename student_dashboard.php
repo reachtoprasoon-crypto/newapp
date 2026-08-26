@@ -3,6 +3,7 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/lib/auth.php';
 require_once __DIR__ . '/lib/reference.php';
 require_once __DIR__ . '/lib/controls.php';
+require_once __DIR__ . '/lib/theme.php';
 
 require_login_page();
 $user = current_user();
@@ -14,9 +15,17 @@ if ($user['type'] !== 'student') {
 
 $comments = get_all_comments($mysqli);
 $controls = get_all_controls($mysqli);
+$defaultThemeCval = 0;
+foreach ($controls as $c) {
+    if ($c['control'] === 'Default Theme') {
+        $defaultThemeCval = (int) $c['cval'];
+        break;
+    }
+}
+$themeMode = $defaultThemeCval === 1 ? 'dark' : 'light';
 ?>
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme="<?= $themeMode ?>">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">

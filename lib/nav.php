@@ -25,6 +25,8 @@ function get_nav_tabs_for_role($ttype) {
             ['slug' => 'tc', 'label' => 'Issue TC', 'icon' => 'fa-file-export'],
             ['slug' => 'activity-log', 'label' => 'Activity Log', 'icon' => 'fa-clock-rotate-left'],
             ['slug' => 'controls', 'label' => 'Controls', 'icon' => 'fa-sliders'],
+            ['slug' => 'theme', 'label' => 'Theme', 'icon' => 'fa-palette'],
+            ['slug' => 'database', 'label' => 'Database', 'icon' => 'fa-database'],
         ];
     }
     if ($ttype === 5) { // Office
