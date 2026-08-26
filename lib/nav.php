@@ -20,6 +20,8 @@ function get_nav_tabs_for_role($ttype) {
             ['slug' => 'aptitude', 'label' => 'Aptitude', 'icon' => 'fa-brain'],
             ['slug' => 'communications', 'label' => 'Communications', 'icon' => 'fa-bullhorn'],
             ['slug' => 'data-collection', 'label' => 'Data Collection', 'icon' => 'fa-clipboard-list'],
+            ['slug' => 'question-papers', 'label' => 'Question Papers', 'icon' => 'fa-list-check'],
+            ['slug' => 'subjective-papers', 'label' => 'Subjective Papers', 'icon' => 'fa-file-pen'],
             ['slug' => 'tc', 'label' => 'Issue TC', 'icon' => 'fa-file-export'],
             ['slug' => 'activity-log', 'label' => 'Activity Log', 'icon' => 'fa-clock-rotate-left'],
             ['slug' => 'controls', 'label' => 'Controls', 'icon' => 'fa-sliders'],
@@ -35,6 +37,7 @@ function get_nav_tabs_for_role($ttype) {
             ['slug' => 'students-total', 'label' => 'Students Total', 'icon' => 'fa-ranking-star'],
             ['slug' => 'communications', 'label' => 'Communications', 'icon' => 'fa-bullhorn'],
             ['slug' => 'data-collection', 'label' => 'Data Collection', 'icon' => 'fa-clipboard-list'],
+            ['slug' => 'subjective-papers', 'label' => 'Subjective Papers', 'icon' => 'fa-file-pen'],
             ['slug' => 'activity-log', 'label' => 'Activity Log', 'icon' => 'fa-clock-rotate-left'],
         ];
     }
@@ -44,6 +47,8 @@ function get_nav_tabs_for_role($ttype) {
             ['slug' => 'attendance', 'label' => 'Attendance', 'icon' => 'fa-calendar-check'],
             ['slug' => 'class-roster', 'label' => 'Class Roster', 'icon' => 'fa-table-list'],
             ['slug' => 'communications', 'label' => 'Communications', 'icon' => 'fa-bullhorn'],
+            ['slug' => 'question-papers', 'label' => 'Question Papers', 'icon' => 'fa-list-check'],
+            ['slug' => 'subjective-papers', 'label' => 'Subjective Papers', 'icon' => 'fa-file-pen'],
         ];
     }
 
@@ -53,6 +58,8 @@ function get_nav_tabs_for_role($ttype) {
         ['slug' => 'attendance', 'label' => 'Attendance', 'icon' => 'fa-calendar-check'],
         ['slug' => 'communications', 'label' => 'Communications', 'icon' => 'fa-bullhorn'],
         ['slug' => 'data-collection', 'label' => 'Data Collection', 'icon' => 'fa-clipboard-list'],
+        ['slug' => 'question-papers', 'label' => 'Question Papers', 'icon' => 'fa-list-check'],
+        ['slug' => 'subjective-papers', 'label' => 'Subjective Papers', 'icon' => 'fa-file-pen'],
     ];
     if ($ttype === 1) {
         $tabs[] = ['slug' => 'students', 'label' => 'My Class', 'icon' => 'fa-user-graduate'];
