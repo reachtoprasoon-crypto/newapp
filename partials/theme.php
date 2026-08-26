@@ -21,7 +21,7 @@
           <label class="form-label">Watermark Image</label>
           <input type="file" class="form-control mb-3" id="wm_file" accept="image/*">
 
-          <label class="form-label">Transparency: <span id="wm_opacityLabel">70%</span></label>
+          <label class="form-label">Opacity: <span id="wm_opacityLabel">30%</span></label>
           <input type="range" class="form-range mb-3" id="wm_opacity" min="1" max="100" value="30">
 
           <label class="form-label">Size: <span id="wm_sizeLabel">350px</span></label>

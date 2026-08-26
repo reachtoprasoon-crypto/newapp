@@ -59,8 +59,16 @@ function rc_style($sheet, $range, $opts) {
     }
 }
 
-// $sides: array subset of ['top','bottom','left','right'] or 'all'
+// $sides: array subset of ['top','bottom','left','right'], 'all' (every side
+// of every cell in the range — a full grid), or 'outline' (a single border
+// around the range's true outer perimeter only, regardless of how many rows/
+// cells it spans or how they're merged — requires $borders to come from a
+// multi-cell range style, i.e. $sheet->getStyle('A1:D3'), not a single cell).
 function rc_apply_border($borders, $sides) {
+    if ($sides === 'outline') {
+        $borders->getOutline()->setBorderStyle(Border::BORDER_THIN)->getColor()->setARGB(RC_DATA_COLOR);
+        return;
+    }
     if ($sides === 'all') {
         $sides = ['top', 'bottom', 'left', 'right'];
     }
@@ -125,6 +133,13 @@ function generate_term_report_card_excel($input) {
     }
 
     $gdWatermarkImage = $watermarkData ? @imagecreatefromstring($watermarkData) : false;
+    if ($gdWatermarkImage !== false && (imageistruecolor($gdWatermarkImage) || imagecolortransparent($gdWatermarkImage) >= 0)) {
+        // Without this, the alpha channel a semi-transparent uploaded PNG carries
+        // is dropped once PhpSpreadsheet clones the GD resource per sheet, so the
+        // watermark always renders fully opaque regardless of the source image's
+        // transparency. Matches what MemoryDrawing::fromString() does internally.
+        imagesavealpha($gdWatermarkImage, true);
+    }
 
     preg_match('/\d+/', $selectedClass, $classNumMatch);
     $classNum = $classNumMatch ? (int) $classNumMatch[0] : 0;
@@ -191,7 +206,7 @@ function generate_term_report_card_excel($input) {
                 $drawing->setImageResource($gdWatermarkImage);
                 $drawing->setRenderingFunction(MemoryDrawing::RENDERING_DEFAULT);
                 $drawing->setMimeType(MemoryDrawing::MIMETYPE_DEFAULT);
-                $drawing->setCoordinates('G6');
+                $drawing->setCoordinates('F3');
                 $drawing->setWidth($watermarkSize);
                 $drawing->setHeight($watermarkSize);
                 $drawing->setWorksheet($sheet);
@@ -402,16 +417,21 @@ function generate_term_report_card_excel($input) {
 
         $setupSidebarHeader(10, 'LEGEND');
         // A 3-row block merge (ExcelJS's mergeCells(11,sS,13,sE)).
-        $sheet->mergeCells(rc_col_letter($sS) . '11:' . rc_col_letter($sE) . '13');
+        $legendRange = rc_col_letter($sS) . '11:' . rc_col_letter($sE) . '13';
+        $sheet->mergeCells($legendRange);
         $legendRef = rc_col_letter($sS) . '11';
         $sheet->setCellValue($legendRef, "A - 80% and above\nB - 60 - 79%\nC - 40 - 59%\nD - Below 40%");
-        rc_style($sheet, $legendRef, ['color' => RC_THEME_COLOR, 'size' => 10, 'wrap' => true, 'indent' => 1, 'border' => 'all']);
+        rc_style($sheet, $legendRef, ['color' => RC_THEME_COLOR, 'size' => 10, 'wrap' => true, 'indent' => 1]);
+        // Border must be applied to the full merged range, not just the
+        // top-left cell reference, or only the top-left corner renders —
+        // getOutline() then draws a clean box around the range's true outer
+        // edge regardless of the merge inside it.
+        rc_style($sheet, $legendRange, ['border' => 'outline']);
 
         $setupSidebarHeader(15, 'GRADE SUBJECTS');
         for ($i = 0; $i < 6; $i++) {
             $r = 16 + $i;
             $g = $studentGradesList[$i] ?? null;
-            $isLastRow = $i === 5;
             $sheet->mergeCells(rc_range($r, $sS, $sE - 1));
             $nameRef = rc_col_letter($sS) . $r;
             $valRef = rc_col_letter($sE) . $r;
@@ -419,9 +439,13 @@ function generate_term_report_card_excel($input) {
                 $sheet->setCellValue($nameRef, $g['subname']);
                 $sheet->setCellValue($valRef, $g['grade']);
             }
-            rc_style($sheet, $nameRef, ['size' => 11, 'halign' => Alignment::HORIZONTAL_LEFT, 'indent' => 1, 'border' => $isLastRow ? ['left', 'bottom'] : ['left']]);
-            rc_style($sheet, $valRef, ['size' => 11, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => $isLastRow ? ['right', 'bottom'] : ['right']]);
+            rc_style($sheet, $nameRef, ['size' => 11, 'halign' => Alignment::HORIZONTAL_LEFT, 'indent' => 1]);
+            rc_style($sheet, $valRef, ['size' => 11, 'halign' => Alignment::HORIZONTAL_CENTER]);
         }
+        // One outline border around the whole 6-row block (rows 16-21), same
+        // reasoning as LEGEND above — replaces the previous fragile per-row
+        // manual left/right/bottom-on-last-row styling.
+        rc_style($sheet, rc_col_letter($sS) . '16:' . rc_col_letter($sE) . '21', ['border' => 'outline']);
 
         if ($studentComment && !empty(trim($studentComment['comment'] ?? '')) && trim($studentComment['comment']) !== '_') {
             $cR = 24;
@@ -486,6 +510,10 @@ function generate_final_report_card_excel($input) {
         }
     }
     $gdWatermarkImage = $watermarkData ? @imagecreatefromstring($watermarkData) : false;
+    if ($gdWatermarkImage !== false && (imageistruecolor($gdWatermarkImage) || imagecolortransparent($gdWatermarkImage) >= 0)) {
+        // See the matching comment in generate_term_report_card_excel() above.
+        imagesavealpha($gdWatermarkImage, true);
+    }
 
     $spreadsheet = new Spreadsheet();
     $spreadsheet->removeSheetByIndex(0);
@@ -531,7 +559,7 @@ function generate_final_report_card_excel($input) {
                 $drawing->setImageResource($gdWatermarkImage);
                 $drawing->setRenderingFunction(MemoryDrawing::RENDERING_DEFAULT);
                 $drawing->setMimeType(MemoryDrawing::MIMETYPE_DEFAULT);
-                $drawing->setCoordinates('G6');
+                $drawing->setCoordinates('F3');
                 $drawing->setWidth($watermarkSize);
                 $drawing->setHeight($watermarkSize);
                 $drawing->setWorksheet($sheet);
@@ -679,17 +707,19 @@ function generate_final_report_card_excel($input) {
         rc_merge_set($sheet, 9, $sS, $sE, $finalPercentText, ['bold' => true, 'size' => 12, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
 
         $setupSidebarHeader(10, 'LEGEND');
-        $sheet->mergeCells(rc_col_letter($sS) . '11:' . rc_col_letter($sE) . '13');
+        $legendRange = rc_col_letter($sS) . '11:' . rc_col_letter($sE) . '13';
+        $sheet->mergeCells($legendRange);
         $legendRef = rc_col_letter($sS) . '11';
         $sheet->setCellValue($legendRef, "A - 80% and above\nB - 60 - 79%\nC - 40 - 59%\nD - Below 40%");
-        rc_style($sheet, $legendRef, ['color' => RC_THEME_COLOR, 'size' => 10, 'wrap' => true, 'indent' => 1, 'border' => 'all']);
+        rc_style($sheet, $legendRef, ['color' => RC_THEME_COLOR, 'size' => 10, 'wrap' => true, 'indent' => 1]);
+        // See the matching comment in generate_term_report_card_excel() above.
+        rc_style($sheet, $legendRange, ['border' => 'outline']);
 
         $setupSidebarHeader(15, 'GRADE SUBJECTS');
         $studentGradesList = $student['snapshot']['grades'] ?? [];
         for ($i = 0; $i < 6; $i++) {
             $r = 16 + $i;
             $g = $studentGradesList[$i] ?? null;
-            $isLastRow = $i === 5;
             $sheet->mergeCells(rc_range($r, $sS, $sE - 1));
             $nameRef = rc_col_letter($sS) . $r;
             $valRef = rc_col_letter($sE) . $r;
@@ -697,9 +727,10 @@ function generate_final_report_card_excel($input) {
                 $sheet->setCellValue($nameRef, $g['subname']);
                 $sheet->setCellValue($valRef, $g['grade']);
             }
-            rc_style($sheet, $nameRef, ['size' => 11, 'halign' => Alignment::HORIZONTAL_LEFT, 'indent' => 1, 'border' => $isLastRow ? ['left', 'bottom'] : ['left']]);
-            rc_style($sheet, $valRef, ['size' => 11, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => $isLastRow ? ['right', 'bottom'] : ['right']]);
+            rc_style($sheet, $nameRef, ['size' => 11, 'halign' => Alignment::HORIZONTAL_LEFT, 'indent' => 1]);
+            rc_style($sheet, $valRef, ['size' => 11, 'halign' => Alignment::HORIZONTAL_CENTER]);
         }
+        rc_style($sheet, rc_col_letter($sS) . '16:' . rc_col_letter($sE) . '21', ['border' => 'outline']);
 
         $finalTotal = $student['snapshot']['total'] ?? null;
         $summaryItems = [
