@@ -16,6 +16,12 @@ $(function () {
         $('#dashboardTabs a.nav-link').removeClass('active');
         $(this).addClass('active');
         loadTab($(this).data('slug'));
+
+        // On mobile the nav is a collapsed menu — close it after picking a tab.
+        const collapseEl = document.getElementById('dashboardNavCollapse');
+        if (collapseEl && collapseEl.classList.contains('show')) {
+            bootstrap.Collapse.getOrCreateInstance(collapseEl).hide();
+        }
     });
 
     const firstTab = $('#dashboardTabs a.nav-link').first();

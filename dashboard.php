@@ -59,15 +59,22 @@ $navTabs = get_nav_tabs_for_role($ttype);
 </div>
 
 <div class="app-shell">
-  <ul class="nav nav-tabs px-3 pt-3" id="dashboardTabs">
-    <?php foreach ($navTabs as $i => $tab): ?>
-      <li class="nav-item">
-        <a class="nav-link <?= $i === 0 ? 'active' : '' ?>" href="#" data-slug="<?= htmlspecialchars($tab['slug']) ?>">
-          <i class="fa-solid <?= htmlspecialchars($tab['icon']) ?> me-1"></i><?= htmlspecialchars($tab['label']) ?>
-        </a>
-      </li>
-    <?php endforeach; ?>
-  </ul>
+  <nav class="navbar navbar-expand-lg navbar-light app-nav px-3 pt-3">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#dashboardNavCollapse" aria-controls="dashboardNavCollapse" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span> <span class="align-middle">Menu</span>
+    </button>
+    <div class="collapse navbar-collapse" id="dashboardNavCollapse">
+      <ul class="nav nav-tabs flex-column flex-lg-row w-100" id="dashboardTabs">
+        <?php foreach ($navTabs as $i => $tab): ?>
+          <li class="nav-item">
+            <a class="nav-link <?= $i === 0 ? 'active' : '' ?>" href="#" data-slug="<?= htmlspecialchars($tab['slug']) ?>">
+              <i class="fa-solid <?= htmlspecialchars($tab['icon']) ?> me-1"></i><?= htmlspecialchars($tab['label']) ?>
+            </a>
+          </li>
+        <?php endforeach; ?>
+      </ul>
+    </div>
+  </nav>
   <div class="p-3" id="tabContent">
     <div class="tab-pane-loading">Loading...</div>
   </div>

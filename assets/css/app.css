@@ -53,8 +53,80 @@ body {
     margin: 8vh auto;
 }
 
+@media (max-width: 575.98px) {
+    .login-card {
+        margin: 6vh 1rem;
+    }
+}
+
 .tab-pane-loading {
     padding: 3rem;
     text-align: center;
     color: #6c757d;
+}
+
+/* Collapsible main navigation (dashboard.php) */
+.app-nav {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.app-nav .navbar-toggler {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.75rem;
+}
+
+.app-nav .navbar-collapse .nav-link {
+    white-space: nowrap;
+}
+
+/* Below the lg breakpoint the tab list becomes a stacked mobile menu. */
+@media (max-width: 991.98px) {
+    .app-nav .navbar-collapse {
+        margin-top: 0.5rem;
+        border-top: 1px solid #dee2e6;
+    }
+
+    .app-nav .nav-tabs {
+        border-bottom: 0;
+    }
+
+    .app-nav .nav-tabs .nav-item {
+        width: 100%;
+    }
+
+    .app-nav .nav-tabs .nav-link {
+        width: 100%;
+        text-align: left;
+        border: 0;
+        border-bottom: 1px solid #f1f1f1;
+        border-radius: 0;
+        padding: 0.75rem 0.5rem;
+    }
+
+    .app-nav .nav-tabs .nav-link.active {
+        background-color: #f4f6f8;
+        border-color: transparent;
+        font-weight: 600;
+    }
+}
+
+/* General small-screen comfort: tighter chrome so content gets more room. */
+@media (max-width: 575.98px) {
+    .app-header {
+        padding: 0.5rem 0.75rem;
+    }
+
+    .app-header .school-name {
+        font-size: 0.95rem;
+    }
+
+    .app-shell {
+        margin: 0.5rem;
+        border-radius: 0.375rem;
+    }
+
+    .app-shell > .p-3 {
+        padding: 0.75rem !important;
+    }
 }
