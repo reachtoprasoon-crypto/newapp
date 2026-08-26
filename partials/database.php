@@ -7,7 +7,7 @@
     <div class="card-body">
       <div class="alert alert-warning small">
         <i class="fa-solid fa-triangle-exclamation me-1"></i>
-        Every page of this app depends on these settings. Saving tests the new connection first and backs up <code>config.php</code> before writing — but a wrong host/user/database will still take the whole app offline until it's fixed. Have someone with SFTP access on standby.
+Every page of this app depends on these settings. Saving only ever writes to a plain <code>.env</code> connection-values file (never any application code) — it tests the new connection first and backs up <code>.env</code> before writing — but a wrong host/user/database will still take the whole app offline until it's fixed. Have someone with SFTP access on standby.
       </div>
       <form id="dbConfigForm" class="row g-3" style="max-width: 640px;">
         <div class="col-md-6">

@@ -3,3 +3,5 @@ composer.phar
 vsecadlu_reportcard202627.sql
 .claude/settings.local.json
 config.php.bak.*
+.env
+.env.bak.*
