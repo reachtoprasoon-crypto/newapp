@@ -4,5 +4,5 @@ require_once __DIR__ . '/../../lib/respond.php';
 require_once __DIR__ . '/../../lib/auth.php';
 require_once __DIR__ . '/../../lib/controls.php';
 
-require_login_ajax();
-json_ok(get_all_controls($mysqli));
+require_staff_role_ajax([10]);
+json_ok(get_toggleable_controls($mysqli));
