@@ -24,7 +24,7 @@ function is_mcq_privileged($user) {
 // defensively on every relevant request and no-op once applied.
 function ensure_questions_marks_column($mysqli) {
     try {
-        mysqli_query($mysqli, "ALTER TABLE questions ADD COLUMN marks DECIMAL(4,2) NOT NULL DEFAULT 1.00");
+        mysqli_query($mysqli, "ALTER TABLE questions ADD COLUMN marks DECIMAL(4,2) NOT NULL DEFAULT 0.50");
     } catch (\Throwable $e) {
         // already exists
     }
@@ -137,7 +137,7 @@ function upsert_question_paper($mysqli, $qpid, $tid, $isPrivileged, $input) {
         }
 
         foreach ($input['questions'] as $q) {
-            $marks = is_numeric($q['marks'] ?? null) ? (float) $q['marks'] : 1.00;
+            $marks = is_numeric($q['marks'] ?? null) ? (float) $q['marks'] : 0.50;
             db_execute(
                 $mysqli,
                 "INSERT INTO questions (qpid, question_text, question_image, option_a, option_a_image, option_b, option_b_image, option_c, option_c_image, option_d, option_d_image, correct_option, marks)
@@ -403,8 +403,16 @@ function build_question_paper_zip_path($paper) {
 // The 4 option-letter columns are always the fixed A,B,C,D order since this
 // app's printed/exported paper never shuffles option display order — the
 // real answer key is each question's correct_option.
+// Strips a section letter off a class code (e.g. "7B" -> "7") for the CSV's
+// class column; classes with no trailing section (already just digits) pass
+// through unchanged.
+function question_paper_class_number($sclass) {
+    return preg_match('/^\d+/', $sclass, $m) ? $m[0] : $sclass;
+}
+
 function build_question_paper_answers_csv_rows($paper) {
     $folder = 'picques/' . preg_replace('/\s+/', '_', $paper['sclass']) . '/' . preg_replace('/\s+/', '_', $paper['subshort']);
+    $classNumber = question_paper_class_number($paper['sclass']);
     $rows = [];
     foreach ([1, 2] as $set) {
         foreach ($paper['questions'] as $index => $q) {
@@ -414,8 +422,8 @@ function build_question_paper_answers_csv_rows($paper) {
                 "<img src='./{$folder}/Question_{$n}.png'>",
                 'A', 'B', 'C', 'D',
                 'Page_' . $page,
-                (float) ($q['marks'] ?? 1.00),
-                $paper['sclass'],
+                (float) ($q['marks'] ?? 0.50),
+                $classNumber,
                 $set,
                 $paper['subname'],
                 1,

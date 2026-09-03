@@ -206,7 +206,7 @@ CREATE TABLE `questions` (
   `option_d` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   `option_d_image` mediumtext COLLATE utf8_unicode_ci,
   `correct_option` enum('A','B','C','D') COLLATE utf8_unicode_ci NOT NULL,
-  `marks` decimal(4,2) NOT NULL DEFAULT '1.00'
+  `marks` decimal(4,2) NOT NULL DEFAULT '0.50'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 CREATE TABLE `question_papers` (
   `qpid` int(11) NOT NULL,

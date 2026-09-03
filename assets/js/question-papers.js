@@ -62,7 +62,7 @@
     }
 
     function questionCardHtml(q, idx) {
-        q = q || { question_text: '', question_image: '', option_a: '', option_a_image: '', option_b: '', option_b_image: '', option_c: '', option_c_image: '', option_d: '', option_d_image: '', correct_option: 'A', marks: 1 };
+        q = q || { question_text: '', question_image: '', option_a: '', option_a_image: '', option_b: '', option_b_image: '', option_c: '', option_c_image: '', option_d: '', option_d_image: '', correct_option: 'A', marks: 0.5 };
         const textareaId = 'qp_q_text_' + idx;
 
         const $card = $('<div class="card mb-3 border-start border-4 border-primary qp-question-card" data-idx="' + idx + '">');
@@ -74,7 +74,7 @@
             '<label class="fw-bold small text-uppercase text-primary">Question</label>' +
             '<div class="d-flex align-items-center gap-2">' +
             '<label class="small text-muted mb-0">Marks</label>' +
-            '<input type="number" step="0.25" min="0" class="form-control form-control-sm qp-marks-input" style="width:70px" value="' + (q.marks || 1) + '">' +
+            '<input type="number" step="0.25" min="0" class="form-control form-control-sm qp-marks-input" style="width:70px" value="' + (q.marks || 0.5) + '">' +
             '<button type="button" class="btn btn-sm btn-outline-danger qp-remove-question"><i class="fa-solid fa-trash"></i></button>' +
             '</div>' +
             '</div>'
@@ -216,7 +216,7 @@
             const idx = $(this).data('idx');
             const q = { correct_option: $(this).find('.qp-correct-radio:checked').val() || 'A' };
             q.question_text = $('#qp_q_text_' + idx).val();
-            q.marks = parseFloat($(this).find('.qp-marks-input').val()) || 1;
+            q.marks = parseFloat($(this).find('.qp-marks-input').val()) || 0.5;
             ['a', 'b', 'c', 'd'].forEach(function (opt) { q['option_' + opt] = $('#qp_opt_' + opt + '_' + idx).val(); });
             $(this).find('.qp-image-row').each(function () {
                 const field = $(this).data('field');

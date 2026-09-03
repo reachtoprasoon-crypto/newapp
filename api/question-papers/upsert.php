@@ -52,7 +52,7 @@ foreach ($questions as $q) {
         'option_d' => trim($q['option_d'] ?? ''),
         'option_d_image' => $q['option_d_image'] ?? '',
         'correct_option' => $correct,
-        'marks' => is_numeric($q['marks'] ?? null) ? (float) $q['marks'] : 1.00,
+        'marks' => is_numeric($q['marks'] ?? null) ? (float) $q['marks'] : 0.50,
     ];
 }
 
