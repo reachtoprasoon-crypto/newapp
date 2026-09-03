@@ -83,7 +83,7 @@
         const sclass = $('#cr_class').val();
         const termid = $('#cr_term').val();
         const report = $('#cr_report').val();
-        window.location.href = BASE_URL + '/api/reporting/class_roster_export.php?sclass=' + encodeURIComponent(sclass) + '&termid=' + termid + '&report=' + report;
+        triggerDownload(BASE_URL + '/api/reporting/class_roster_export.php?sclass=' + encodeURIComponent(sclass) + '&termid=' + termid + '&report=' + report);
     }
 
     $('#btnFetchRoster').on('click', fetchRoster);
