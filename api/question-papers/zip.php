@@ -27,6 +27,11 @@ if ($paper === null) {
     die('Paper not found.');
 }
 
-$tmpFile = build_question_paper_zip_path($paper);
+try {
+    $tmpFile = build_question_paper_zip_path($paper);
+} catch (\Throwable $e) {
+    http_response_code(500);
+    die('Could not build the zip: ' . $e->getMessage());
+}
 $filename = 'MCQ_' . preg_replace('/\s+/', '_', $paper['subname']) . '_' . preg_replace('/\s+/', '_', $paper['title']) . '_Images.zip';
 paper_stream_zip_file($tmpFile, $filename);

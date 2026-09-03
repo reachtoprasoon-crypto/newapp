@@ -233,8 +233,17 @@ function question_paper_image_ext($dataUrl) {
 function build_question_paper_zip_path($paper) {
     $folder = 'picques/' . preg_replace('/\s+/', '_', $paper['sclass']) . '/' . preg_replace('/\s+/', '_', $paper['subshort']);
     $tmpFile = tempnam(sys_get_temp_dir(), 'qp_zip_');
+    // tempnam() already creates an empty file; ZipArchive::CREATE needs the
+    // path to not exist yet (more portable across libzip versions than
+    // relying on ::OVERWRITE, which some shared-hosting PHP builds mishandle
+    // on a pre-existing 0-byte file — silently, with no error, hence the
+    // check below).
+    unlink($tmpFile);
     $zip = new \ZipArchive();
-    $zip->open($tmpFile, \ZipArchive::OVERWRITE);
+    $result = $zip->open($tmpFile, \ZipArchive::CREATE);
+    if ($result !== true) {
+        throw new \RuntimeException('Could not create zip archive (ZipArchive::open error code ' . $result . ').');
+    }
 
     foreach ($paper['questions'] as $index => $q) {
         $n = $index + 1;
@@ -255,7 +264,9 @@ function build_question_paper_zip_path($paper) {
         }
     }
 
-    $zip->close();
+    if (!$zip->close()) {
+        throw new \RuntimeException('Could not finalize zip archive.');
+    }
     return $tmpFile;
 }
 
