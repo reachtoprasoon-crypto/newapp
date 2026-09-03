@@ -62,7 +62,7 @@
     }
 
     function questionCardHtml(q, idx) {
-        q = q || { question_text: '', question_image: '', option_a: '', option_a_image: '', option_b: '', option_b_image: '', option_c: '', option_c_image: '', option_d: '', option_d_image: '', correct_option: 'A' };
+        q = q || { question_text: '', question_image: '', option_a: '', option_a_image: '', option_b: '', option_b_image: '', option_c: '', option_c_image: '', option_d: '', option_d_image: '', correct_option: 'A', marks: 1 };
         const textareaId = 'qp_q_text_' + idx;
 
         const $card = $('<div class="card mb-3 border-start border-4 border-primary qp-question-card" data-idx="' + idx + '">');
@@ -72,7 +72,11 @@
         $body.append(
             '<div class="d-flex justify-content-between align-items-center mb-1">' +
             '<label class="fw-bold small text-uppercase text-primary">Question</label>' +
+            '<div class="d-flex align-items-center gap-2">' +
+            '<label class="small text-muted mb-0">Marks</label>' +
+            '<input type="number" step="0.25" min="0" class="form-control form-control-sm qp-marks-input" style="width:70px" value="' + (q.marks || 1) + '">' +
             '<button type="button" class="btn btn-sm btn-outline-danger qp-remove-question"><i class="fa-solid fa-trash"></i></button>' +
+            '</div>' +
             '</div>'
         );
         const $toolbarMount = $('<div>');
@@ -177,6 +181,10 @@
                 actions.append('<button class="btn btn-sm btn-outline-danger btn-qp-delete" data-id="' + p.qpid + '"><i class="fa-solid fa-trash"></i></button>');
             }
             actions.append('<button class="btn btn-sm btn-outline-primary btn-qp-download" data-id="' + p.qpid + '"><i class="fa-solid fa-file-word"></i></button>');
+            if (isPrivileged) {
+                actions.append('<button class="btn btn-sm btn-outline-success btn-qp-download-zip" data-id="' + p.qpid + '" title="Download Images (ZIP)"><i class="fa-solid fa-file-zipper"></i></button>');
+                actions.append('<button class="btn btn-sm btn-outline-dark btn-qp-download-csv" data-id="' + p.qpid + '" title="Download Answers (CSV)"><i class="fa-solid fa-file-csv"></i></button>');
+            }
             row.append(actions);
             $('#qpBody').append(row);
         });
@@ -195,6 +203,12 @@
     $('#qpBody').on('click', '.btn-qp-download', function () {
         window.location.href = BASE_URL + '/api/question-papers/docx.php?qpid=' + $(this).data('id');
     });
+    $('#qpBody').on('click', '.btn-qp-download-zip', function () {
+        window.location.href = BASE_URL + '/api/question-papers/zip.php?qpid=' + $(this).data('id');
+    });
+    $('#qpBody').on('click', '.btn-qp-download-csv', function () {
+        window.location.href = BASE_URL + '/api/question-papers/answers_csv.php?qpid=' + $(this).data('id');
+    });
 
     $('#qpBtnSave').on('click', function () {
         const questions = [];
@@ -202,6 +216,7 @@
             const idx = $(this).data('idx');
             const q = { correct_option: $(this).find('.qp-correct-radio:checked').val() || 'A' };
             q.question_text = $('#qp_q_text_' + idx).val();
+            q.marks = parseFloat($(this).find('.qp-marks-input').val()) || 1;
             ['a', 'b', 'c', 'd'].forEach(function (opt) { q['option_' + opt] = $('#qp_opt_' + opt + '_' + idx).val(); });
             $(this).find('.qp-image-row').each(function () {
                 const field = $(this).data('field');

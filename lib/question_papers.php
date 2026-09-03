@@ -19,6 +19,17 @@ function is_mcq_privileged($user) {
     return $user !== null && $user['type'] === 'staff' && in_array((int) $user['ttype'], [10, 6], true);
 }
 
+// Self-healing ALTER, same idiom as controls.php's get_all_controls(): no
+// migrations mechanism exists in this project, so schema additions run
+// defensively on every relevant request and no-op once applied.
+function ensure_questions_marks_column($mysqli) {
+    try {
+        mysqli_query($mysqli, "ALTER TABLE questions ADD COLUMN marks DECIMAL(4,2) NOT NULL DEFAULT 1.00");
+    } catch (\Throwable $e) {
+        // already exists
+    }
+}
+
 // controls row conid=14 ("Create_Questions") gates MCQ authoring for
 // non-privileged staff, matching the source's `controls.find(c => c.conid
 // === 14)` check.
@@ -62,6 +73,7 @@ function get_question_papers($mysqli, $tid, $isPrivileged) {
 }
 
 function get_question_paper($mysqli, $qpid) {
+    ensure_questions_marks_column($mysqli);
     $paper = db_fetch_one(
         $mysqli,
         "SELECT qp.qpid, qp.tid, t.tname, qp.sclass, qp.subid, s.subname, s.subshort, qp.title, qp.created_at
@@ -89,6 +101,7 @@ function get_question_paper($mysqli, $qpid) {
 // $input: sclass, subid, title, questions[] (question_text, question_image,
 // option_a..d, option_a..d_image, correct_option). $qpid null -> insert.
 function upsert_question_paper($mysqli, $qpid, $tid, $isPrivileged, $input) {
+    ensure_questions_marks_column($mysqli);
     mysqli_begin_transaction($mysqli);
     try {
         if ($qpid) {
@@ -124,11 +137,12 @@ function upsert_question_paper($mysqli, $qpid, $tid, $isPrivileged, $input) {
         }
 
         foreach ($input['questions'] as $q) {
+            $marks = is_numeric($q['marks'] ?? null) ? (float) $q['marks'] : 1.00;
             db_execute(
                 $mysqli,
-                "INSERT INTO questions (qpid, question_text, question_image, option_a, option_a_image, option_b, option_b_image, option_c, option_c_image, option_d, option_d_image, correct_option)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                'isssssssssss',
+                "INSERT INTO questions (qpid, question_text, question_image, option_a, option_a_image, option_b, option_b_image, option_c, option_c_image, option_d, option_d_image, correct_option, marks)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                'isssssssssssd',
                 [
                     $qpid,
                     $q['question_text'], $q['question_image'] ?: null,
@@ -137,6 +151,7 @@ function upsert_question_paper($mysqli, $qpid, $tid, $isPrivileged, $input) {
                     $q['option_c'], $q['option_c_image'] ?: null,
                     $q['option_d'], $q['option_d_image'] ?: null,
                     $q['correct_option'],
+                    $marks,
                 ]
             );
         }
@@ -200,4 +215,95 @@ function generate_question_paper_docx($paper) {
     }
 
     return [$phpWord, $mathMap];
+}
+
+// Picks a file extension from a "data:image/xxx;base64,..." URL's MIME
+// subtype; falls back to png for anything unrecognized/missing.
+function question_paper_image_ext($dataUrl) {
+    if (preg_match('#^data:image/([a-zA-Z0-9.+-]+);base64,#', $dataUrl, $m)) {
+        $subtype = strtolower($m[1]);
+        return $subtype === 'jpeg' ? 'jpg' : $subtype;
+    }
+    return 'png';
+}
+
+// Builds a temp zip of every question/option image, laid out as
+// picques/<sclass>/<subshort>/Question_<n>[_A.._D].<ext>. Caller streams and
+// unlink()s the returned path.
+function build_question_paper_zip_path($paper) {
+    $folder = 'picques/' . preg_replace('/\s+/', '_', $paper['sclass']) . '/' . preg_replace('/\s+/', '_', $paper['subshort']);
+    $tmpFile = tempnam(sys_get_temp_dir(), 'qp_zip_');
+    $zip = new \ZipArchive();
+    $zip->open($tmpFile, \ZipArchive::OVERWRITE);
+
+    foreach ($paper['questions'] as $index => $q) {
+        $n = $index + 1;
+        if (!empty($q['question_image'])) {
+            $bytes = paper_decode_base64_image($q['question_image']);
+            if ($bytes !== null) {
+                $zip->addFromString("{$folder}/Question_{$n}." . question_paper_image_ext($q['question_image']), $bytes);
+            }
+        }
+        foreach (['a', 'b', 'c', 'd'] as $opt) {
+            $field = 'option_' . $opt . '_image';
+            if (!empty($q[$field])) {
+                $bytes = paper_decode_base64_image($q[$field]);
+                if ($bytes !== null) {
+                    $zip->addFromString("{$folder}/Question_{$n}_" . strtoupper($opt) . '.' . question_paper_image_ext($q[$field]), $bytes);
+                }
+            }
+        }
+    }
+
+    $zip->close();
+    return $tmpFile;
+}
+
+// Builds the "Positional" answers CSV rows: 2 sets per paper, each question
+// rotated across a 5-page cycle (set 1 walks Page_1..Page_5; set 2 starts one
+// page earlier, Page_5, Page_1..Page_4 — matches the legacy export format).
+// The 4 option-letter columns are always the fixed A,B,C,D order since this
+// app's printed/exported paper never shuffles option display order — the
+// real answer key is each question's correct_option.
+function build_question_paper_answers_csv_rows($paper) {
+    $folder = 'picques/' . preg_replace('/\s+/', '_', $paper['sclass']) . '/' . preg_replace('/\s+/', '_', $paper['subshort']);
+    $rows = [];
+    foreach ([1, 2] as $set) {
+        foreach ($paper['questions'] as $index => $q) {
+            $n = $index + 1;
+            $page = (($n - $set) % 5 + 5) % 5 + 1;
+            $rows[] = [
+                "<img src='./{$folder}/Question_{$n}.png'>",
+                'A', 'B', 'C', 'D',
+                'Page_' . $page,
+                (float) ($q['marks'] ?? 1.00),
+                $paper['sclass'],
+                $set,
+                $paper['subname'],
+                1,
+                0,
+            ];
+        }
+    }
+    return $rows;
+}
+
+function paper_stream_zip_file($tmpFile, $filename) {
+    header('Content-Type: application/zip');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Cache-Control: max-age=0');
+    header('Content-Length: ' . filesize($tmpFile));
+    readfile($tmpFile);
+    unlink($tmpFile);
+}
+
+function paper_stream_csv_rows($rows, $filename) {
+    header('Content-Type: text/csv');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Cache-Control: max-age=0');
+    $out = fopen('php://output', 'w');
+    foreach ($rows as $row) {
+        fputcsv($out, $row);
+    }
+    fclose($out);
 }
