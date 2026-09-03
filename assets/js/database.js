@@ -1,4 +1,9 @@
 (function () {
+    $('#btnDownloadBackup').on('click', function (e) {
+        e.preventDefault();
+        triggerDownload($(this).attr('href'), 15000);
+    });
+
     function loadConfig() {
         ajaxCall({ url: '/api/database/config.php', method: 'GET', silent: true }).then(function (config) {
             $('#db_host').val(config.host);

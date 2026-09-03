@@ -14,6 +14,19 @@ function hideLoading() {
     $('#loading-overlay').hide();
 }
 
+// Downloads (docx/zip/csv/xlsx/sql) are triggered via a plain navigation, not
+// ajaxCall, so there's no response callback to hide the overlay on — the
+// browser gives no JS signal when a Content-Disposition: attachment response
+// finishes generating server-side. Show the spinner, trigger the download,
+// and hide it after delayMs (generous enough to usually outlast generation +
+// the browser taking over with its own download UI). This is a timeout
+// heuristic, not a true completion signal.
+function triggerDownload(url, delayMs) {
+    showLoading();
+    window.location.href = url;
+    setTimeout(hideLoading, delayMs || 6000);
+}
+
 function toastSuccess(message) {
     Swal.fire({ icon: 'success', title: message, toast: true, position: 'top-end', timer: 2500, showConfirmButton: false });
 }

@@ -201,13 +201,13 @@
         });
     });
     $('#qpBody').on('click', '.btn-qp-download', function () {
-        window.location.href = BASE_URL + '/api/question-papers/docx.php?qpid=' + $(this).data('id');
+        triggerDownload(BASE_URL + '/api/question-papers/docx.php?qpid=' + $(this).data('id'));
     });
     $('#qpBody').on('click', '.btn-qp-download-zip', function () {
-        window.location.href = BASE_URL + '/api/question-papers/zip.php?qpid=' + $(this).data('id');
+        triggerDownload(BASE_URL + '/api/question-papers/zip.php?qpid=' + $(this).data('id'));
     });
     $('#qpBody').on('click', '.btn-qp-download-csv', function () {
-        window.location.href = BASE_URL + '/api/question-papers/answers_csv.php?qpid=' + $(this).data('id');
+        triggerDownload(BASE_URL + '/api/question-papers/answers_csv.php?qpid=' + $(this).data('id'));
     });
 
     $('#qpBtnSave').on('click', function () {

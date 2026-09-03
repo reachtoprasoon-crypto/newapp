@@ -104,7 +104,7 @@
             return;
         }
         cfg.sids = Array.from(selectedStudentIds).join(',');
-        window.location.href = BASE_URL + '/api/report-card/export_excel.php?' + buildQuery(cfg);
+        triggerDownload(BASE_URL + '/api/report-card/export_excel.php?' + buildQuery(cfg));
     }
 
     function printReports() {

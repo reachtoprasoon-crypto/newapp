@@ -38,44 +38,60 @@ function rc_merge_set($sheet, $row, $startCol, $endCol, $value, $opts = []) {
     return $cellRef;
 }
 
+// Builds one combined style array and applies it in a single call. Each
+// individual setter on a getStyle($range)->getFont()/getAlignment()/
+// getBorders() supervisor internally re-triggers a full applyFromArray()
+// pass over the whole range — so the previous one-setter-call-per-property
+// version did up to 9 full range-mutation passes per rc_style() call (this
+// runs 60+ times per student sheet). Batching into one applyFromArray() cuts
+// that to a single pass; see PhpSpreadsheet's Style::applyFromArray() docs
+// ("Best Practices for Performance").
 function rc_style($sheet, $range, $opts) {
-    $style = $sheet->getStyle($range);
-    if (isset($opts['bold']) || isset($opts['color']) || isset($opts['size']) || isset($opts['italic'])) {
-        $font = $style->getFont();
-        if (isset($opts['bold'])) $font->setBold($opts['bold']);
-        if (isset($opts['italic'])) $font->setItalic($opts['italic']);
-        if (isset($opts['color'])) $font->getColor()->setARGB($opts['color']);
-        if (isset($opts['size'])) $font->setSize($opts['size']);
-    }
-    if (isset($opts['halign']) || isset($opts['valign']) || isset($opts['wrap']) || isset($opts['indent'])) {
-        $align = $style->getAlignment();
-        if (isset($opts['halign'])) $align->setHorizontal($opts['halign']);
-        if (isset($opts['valign'])) $align->setVertical($opts['valign']);
-        if (isset($opts['wrap'])) $align->setWrapText($opts['wrap']);
-        if (isset($opts['indent'])) $align->setIndent($opts['indent']);
-    }
+    $style = [];
+
+    $font = [];
+    if (isset($opts['bold'])) $font['bold'] = $opts['bold'];
+    if (isset($opts['italic'])) $font['italic'] = $opts['italic'];
+    if (isset($opts['color'])) $font['color'] = ['argb' => $opts['color']];
+    if (isset($opts['size'])) $font['size'] = $opts['size'];
+    if ($font) $style['font'] = $font;
+
+    $align = [];
+    if (isset($opts['halign'])) $align['horizontal'] = $opts['halign'];
+    if (isset($opts['valign'])) $align['vertical'] = $opts['valign'];
+    if (isset($opts['wrap'])) $align['wrapText'] = $opts['wrap'];
+    if (isset($opts['indent'])) $align['indent'] = $opts['indent'];
+    if ($align) $style['alignment'] = $align;
+
     if (!empty($opts['border'])) {
-        rc_apply_border($style->getBorders(), $opts['border']);
+        $style['borders'] = rc_border_array($opts['border']);
+    }
+
+    if ($style) {
+        $sheet->getStyle($range)->applyFromArray($style);
     }
 }
 
 // $sides: array subset of ['top','bottom','left','right'], 'all' (every side
 // of every cell in the range — a full grid), or 'outline' (a single border
 // around the range's true outer perimeter only, regardless of how many rows/
-// cells it spans or how they're merged — requires $borders to come from a
-// multi-cell range style, i.e. $sheet->getStyle('A1:D3'), not a single cell).
-function rc_apply_border($borders, $sides) {
+// cells it spans or how they're merged). 'allBorders'/'outline' are handled
+// by PhpSpreadsheet's own "advanced borders" logic in Style::applyFromArray()
+// (expands to the exact same per-side application the old getOutline()/
+// per-side-getter code did, but as part of the single combined call above).
+function rc_border_array($sides) {
+    $border = ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => RC_DATA_COLOR]];
     if ($sides === 'outline') {
-        $borders->getOutline()->setBorderStyle(Border::BORDER_THIN)->getColor()->setARGB(RC_DATA_COLOR);
-        return;
+        return ['outline' => $border];
     }
     if ($sides === 'all') {
-        $sides = ['top', 'bottom', 'left', 'right'];
+        return ['allBorders' => $border];
     }
+    $borders = [];
     foreach ($sides as $side) {
-        $getter = 'get' . ucfirst($side);
-        $borders->$getter()->setBorderStyle(Border::BORDER_THIN)->getColor()->setARGB(RC_DATA_COLOR);
+        $borders[$side] = $border;
     }
+    return $borders;
 }
 
 function rc_roman_numeral($numStr) {
@@ -149,21 +165,27 @@ function generate_term_report_card_excel($input) {
     $spreadsheet->removeSheetByIndex(0);
     $sheetIndex = 0;
 
+    // Indexed once instead of linearly scanned per student below.
+    $classStudentsBySid = [];
+    foreach ($classStudents as $cs) {
+        $classStudentsBySid[(int) $cs['sid']] = $cs;
+    }
+    $attendanceBySid = [];
+    foreach ($attendanceData as $a) {
+        $attendanceBySid[(int) $a['sid']] = $a;
+    }
+    $commentsByComid = [];
+    foreach ($comments as $c) {
+        $commentsByComid[(int) $c['comid']] = $c;
+    }
+
     foreach ($students as $student) {
         $sid = (int) $student['sid'];
-        $studentDetails = null;
-        foreach ($classStudents as $cs) {
-            if ((int) $cs['sid'] === $sid) { $studentDetails = $cs; break; }
-        }
-        $studentAttendance = null;
-        foreach ($attendanceData as $a) {
-            if ((int) $a['sid'] === $sid) { $studentAttendance = $a; break; }
-        }
+        $studentDetails = $classStudentsBySid[$sid] ?? null;
+        $studentAttendance = $attendanceBySid[$sid] ?? null;
         $studentComment = null;
         if ($studentAttendance && $studentAttendance['comid'] !== null) {
-            foreach ($comments as $c) {
-                if ((int) $c['comid'] === (int) $studentAttendance['comid']) { $studentComment = $c; break; }
-            }
+            $studentComment = $commentsByComid[(int) $studentAttendance['comid']] ?? null;
         }
         $studentGradesList = $studentGrades[$sid] ?? [];
 

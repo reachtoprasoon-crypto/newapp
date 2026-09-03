@@ -43,13 +43,13 @@
     function exportFinalRoster() {
         const sclass = $('#fr_class').val();
         if (!sclass) return;
-        window.location.href = BASE_URL + '/api/final-results/roster_export.php?sclass=' + encodeURIComponent(sclass);
+        triggerDownload(BASE_URL + '/api/final-results/roster_export.php?sclass=' + encodeURIComponent(sclass));
     }
 
     function exportPromotion() {
         const sclass = $('#fr_class').val();
         if (!sclass) return;
-        window.location.href = BASE_URL + '/api/promotion/export.php?sclass=' + encodeURIComponent(sclass);
+        triggerDownload(BASE_URL + '/api/promotion/export.php?sclass=' + encodeURIComponent(sclass));
     }
 
     function renderRoster(data) {
@@ -155,7 +155,7 @@
             includeSignatures: $('#fr_includeSignatures').is(':checked') ? '1' : '0',
         };
         const query = Object.keys(params).map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); }).join('&');
-        window.location.href = BASE_URL + '/api/final-results/export_excel.php?' + query;
+        triggerDownload(BASE_URL + '/api/final-results/export_excel.php?' + query);
     }
 
     $('#frSubNav').on('click', 'a', function (e) {

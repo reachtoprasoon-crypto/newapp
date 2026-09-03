@@ -300,7 +300,7 @@
         });
     });
     $('#spBody').on('click', '.btn-sp-download', function () {
-        window.location.href = BASE_URL + '/api/subjective-papers/docx.php?spid=' + $(this).data('id');
+        triggerDownload(BASE_URL + '/api/subjective-papers/docx.php?spid=' + $(this).data('id'));
     });
 
     $('#spBtnSave').on('click', function () {

@@ -43,7 +43,7 @@ Every page of this app depends on these settings. Saving only ever writes to a p
         <h6 class="mb-1">Full SQL Backup</h6>
         <p class="text-muted small mb-0">Includes every table, all data. May take a while and produce a large file for a database this size.</p>
       </div>
-      <a href="/newapp/api/database/backup.php" class="btn btn-outline-primary"><i class="fa-solid fa-download me-1"></i>Download SQL Backup</a>
+      <a href="/newapp/api/database/backup.php" id="btnDownloadBackup" class="btn btn-outline-primary"><i class="fa-solid fa-download me-1"></i>Download SQL Backup</a>
     </div>
   </div>
 </div>
