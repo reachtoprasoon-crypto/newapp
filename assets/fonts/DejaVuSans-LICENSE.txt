@@ -1,0 +1,8 @@
+DejaVu Sans — bundled for GD-based question-image rendering
+(lib/question_papers.php's build_question_paper_zip_path()), since production
+shared hosting can't be assumed to have any TrueType font installed system-wide.
+
+Source: https://dejavu-fonts.github.io/
+License: Bitstream Vera License (public-domain DejaVu modifications) — free to
+copy, distribute, and embed, including in a larger software package.
+Full text: https://dejavu-fonts.github.io/License.html

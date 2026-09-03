@@ -217,18 +217,158 @@ function generate_question_paper_docx($paper) {
     return [$phpWord, $mathMap];
 }
 
-// Picks a file extension from a "data:image/xxx;base64,..." URL's MIME
-// subtype; falls back to png for anything unrecognized/missing.
-function question_paper_image_ext($dataUrl) {
-    if (preg_match('#^data:image/([a-zA-Z0-9.+-]+);base64,#', $dataUrl, $m)) {
-        $subtype = strtolower($m[1]);
-        return $subtype === 'jpeg' ? 'jpg' : $subtype;
-    }
-    return 'png';
+// GD-rendered question images: every question becomes exactly one
+// Question_<n>.png (question text + all 4 options stacked, any attached
+// images composited in), matching the legacy picques/ single-image-per-
+// question convention — regardless of whether the teacher attached any
+// image at all. GD (bundled with virtually every PHP install, including
+// shared hosting) can only draw plain text, so math shorthand ($...$) and
+// **bold**/*italic* markup are rendered as their literal source characters,
+// not typeset — a deliberate fidelity tradeoff so this works without a
+// headless browser, which shared cPanel hosts essentially never allow
+// installing. DejaVu Sans is bundled in assets/fonts/ since production
+// can't be assumed to have any TrueType font installed system-wide.
+
+define('QP_IMG_WIDTH', 900);
+define('QP_IMG_PADDING', 30);
+define('QP_IMG_FONT_SIZE', 15);
+define('QP_IMG_LINE_HEIGHT', 22);
+define('QP_IMG_MAX_EMBED_WIDTH', 300);
+define('QP_IMG_MAX_EMBED_HEIGHT', 220);
+define('QP_IMG_MAX_OPTION_EMBED_WIDTH', 180);
+define('QP_IMG_MAX_OPTION_EMBED_HEIGHT', 130);
+
+function question_paper_font_path() {
+    return __DIR__ . '/../assets/fonts/DejaVuSans.ttf';
 }
 
-// Builds a temp zip of every question/option image, laid out as
-// picques/<sclass>/<subshort>/Question_<n>[_A.._D].<ext>. Caller streams and
+// Wraps $text (which may itself contain literal newlines) to fit $maxWidth
+// at $fontSize, using the bundled font for measurement. Returns a list of
+// plain-text lines.
+function question_paper_wrap_text($text, $fontSize, $maxWidth) {
+    $font = question_paper_font_path();
+    $allLines = [];
+    foreach (preg_split('/\r\n|\r|\n/', $text) as $paragraph) {
+        $words = preg_split('/\s+/', trim($paragraph));
+        $current = '';
+        foreach ($words as $word) {
+            if ($word === '') {
+                continue;
+            }
+            $test = $current === '' ? $word : $current . ' ' . $word;
+            $box = imagettfbbox($fontSize, 0, $font, $test);
+            $width = abs($box[4] - $box[0]);
+            if ($width > $maxWidth && $current !== '') {
+                $allLines[] = $current;
+                $current = $word;
+            } else {
+                $current = $test;
+            }
+        }
+        $allLines[] = $current;
+    }
+    return $allLines;
+}
+
+// Decodes+scales a base64 data-URL image to fit within maxWidth x maxHeight
+// (preserving aspect ratio, never upscaling). Returns a GD resource the
+// caller must imagedestroy(), or null if the data URL is missing/invalid.
+function question_paper_load_embedded_image($dataUrl, $maxWidth, $maxHeight) {
+    if (empty($dataUrl)) {
+        return null;
+    }
+    $bytes = paper_decode_base64_image($dataUrl);
+    if ($bytes === null) {
+        return null;
+    }
+    $src = @imagecreatefromstring($bytes);
+    if ($src === false) {
+        return null;
+    }
+    $w = imagesx($src);
+    $h = imagesy($src);
+    $scale = min($maxWidth / $w, $maxHeight / $h, 1);
+    $newW = max(1, (int) round($w * $scale));
+    $newH = max(1, (int) round($h * $scale));
+    if ($newW === $w && $newH === $h) {
+        return $src;
+    }
+    $resized = imagecreatetruecolor($newW, $newH);
+    $white = imagecolorallocate($resized, 255, 255, 255);
+    imagefill($resized, 0, 0, $white);
+    imagecopyresampled($resized, $src, 0, 0, 0, 0, $newW, $newH, $w, $h);
+    imagedestroy($src);
+    return $resized;
+}
+
+// Builds the block-by-block layout for one question (text lines + loaded
+// embedded images, each with its rendered height already known), so the
+// canvas can be sized exactly before any drawing happens.
+function question_paper_build_question_layout($q, $questionNumber) {
+    $contentWidth = QP_IMG_WIDTH - 2 * QP_IMG_PADDING;
+    $blocks = [];
+    $height = QP_IMG_PADDING;
+
+    $qLines = question_paper_wrap_text('Q' . $questionNumber . '. ' . ($q['question_text'] ?? ''), QP_IMG_FONT_SIZE, $contentWidth);
+    $blocks[] = ['type' => 'text', 'lines' => $qLines, 'indent' => 0];
+    $height += count($qLines) * QP_IMG_LINE_HEIGHT;
+
+    $qImg = question_paper_load_embedded_image($q['question_image'] ?? '', QP_IMG_MAX_EMBED_WIDTH, QP_IMG_MAX_EMBED_HEIGHT);
+    if ($qImg !== null) {
+        $blocks[] = ['type' => 'image', 'gd' => $qImg, 'indent' => 20];
+        $height += imagesy($qImg) + 10;
+    }
+    $height += 8;
+
+    foreach (['a', 'b', 'c', 'd'] as $opt) {
+        $optLines = question_paper_wrap_text('(' . strtoupper($opt) . ') ' . ($q['option_' . $opt] ?? ''), QP_IMG_FONT_SIZE, $contentWidth - 20);
+        $blocks[] = ['type' => 'text', 'lines' => $optLines, 'indent' => 20];
+        $height += count($optLines) * QP_IMG_LINE_HEIGHT;
+
+        $optImg = question_paper_load_embedded_image($q['option_' . $opt . '_image'] ?? '', QP_IMG_MAX_OPTION_EMBED_WIDTH, QP_IMG_MAX_OPTION_EMBED_HEIGHT);
+        if ($optImg !== null) {
+            $blocks[] = ['type' => 'image', 'gd' => $optImg, 'indent' => 40];
+            $height += imagesy($optImg) + 8;
+        }
+    }
+
+    $height += QP_IMG_PADDING;
+    return ['blocks' => $blocks, 'height' => $height];
+}
+
+// Renders one question (+ its 4 options) to a PNG, returned as raw bytes.
+function question_paper_render_question_png($q, $questionNumber) {
+    $layout = question_paper_build_question_layout($q, $questionNumber);
+    $canvas = imagecreatetruecolor(QP_IMG_WIDTH, max($layout['height'], 100));
+    $white = imagecolorallocate($canvas, 255, 255, 255);
+    $black = imagecolorallocate($canvas, 20, 20, 20);
+    imagefill($canvas, 0, 0, $white);
+
+    $font = question_paper_font_path();
+    $y = QP_IMG_PADDING;
+    foreach ($layout['blocks'] as $block) {
+        if ($block['type'] === 'text') {
+            foreach ($block['lines'] as $line) {
+                $y += QP_IMG_LINE_HEIGHT;
+                imagettftext($canvas, QP_IMG_FONT_SIZE, 0, QP_IMG_PADDING + $block['indent'], $y, $black, $font, $line);
+            }
+        } else {
+            $img = $block['gd'];
+            imagecopy($canvas, $img, QP_IMG_PADDING + $block['indent'], $y, 0, 0, imagesx($img), imagesy($img));
+            $y += imagesy($img) + 10;
+            imagedestroy($img);
+        }
+    }
+
+    ob_start();
+    imagepng($canvas);
+    $bytes = ob_get_clean();
+    imagedestroy($canvas);
+    return $bytes;
+}
+
+// Builds a temp zip of one rendered PNG per question, laid out as
+// picques/<sclass>/<subshort>/Question_<n>.png. Caller streams and
 // unlink()s the returned path.
 function build_question_paper_zip_path($paper) {
     $folder = 'picques/' . preg_replace('/\s+/', '_', $paper['sclass']) . '/' . preg_replace('/\s+/', '_', $paper['subshort']);
@@ -245,34 +385,10 @@ function build_question_paper_zip_path($paper) {
         throw new \RuntimeException('Could not create zip archive (ZipArchive::open error code ' . $result . ').');
     }
 
-    $entryCount = 0;
     foreach ($paper['questions'] as $index => $q) {
         $n = $index + 1;
-        if (!empty($q['question_image'])) {
-            $bytes = paper_decode_base64_image($q['question_image']);
-            if ($bytes !== null) {
-                $zip->addFromString("{$folder}/Question_{$n}." . question_paper_image_ext($q['question_image']), $bytes);
-                $entryCount++;
-            }
-        }
-        foreach (['a', 'b', 'c', 'd'] as $opt) {
-            $field = 'option_' . $opt . '_image';
-            if (!empty($q[$field])) {
-                $bytes = paper_decode_base64_image($q[$field]);
-                if ($bytes !== null) {
-                    $zip->addFromString("{$folder}/Question_{$n}_" . strtoupper($opt) . '.' . question_paper_image_ext($q[$field]), $bytes);
-                    $entryCount++;
-                }
-            }
-        }
-    }
-
-    // libzip silently declines to write anything to disk for a zero-entry
-    // archive (close() still reports success) — surface that as a clear
-    // error instead of streaming a phantom empty file.
-    if ($entryCount === 0) {
-        $zip->close();
-        throw new \RuntimeException('This paper has no question or option images to export.');
+        $png = question_paper_render_question_png($q, $n);
+        $zip->addFromString("{$folder}/Question_{$n}.png", $png);
     }
 
     if (!$zip->close()) {
