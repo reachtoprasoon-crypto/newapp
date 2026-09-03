@@ -245,12 +245,14 @@ function build_question_paper_zip_path($paper) {
         throw new \RuntimeException('Could not create zip archive (ZipArchive::open error code ' . $result . ').');
     }
 
+    $entryCount = 0;
     foreach ($paper['questions'] as $index => $q) {
         $n = $index + 1;
         if (!empty($q['question_image'])) {
             $bytes = paper_decode_base64_image($q['question_image']);
             if ($bytes !== null) {
                 $zip->addFromString("{$folder}/Question_{$n}." . question_paper_image_ext($q['question_image']), $bytes);
+                $entryCount++;
             }
         }
         foreach (['a', 'b', 'c', 'd'] as $opt) {
@@ -259,9 +261,18 @@ function build_question_paper_zip_path($paper) {
                 $bytes = paper_decode_base64_image($q[$field]);
                 if ($bytes !== null) {
                     $zip->addFromString("{$folder}/Question_{$n}_" . strtoupper($opt) . '.' . question_paper_image_ext($q[$field]), $bytes);
+                    $entryCount++;
                 }
             }
         }
+    }
+
+    // libzip silently declines to write anything to disk for a zero-entry
+    // archive (close() still reports success) — surface that as a clear
+    // error instead of streaming a phantom empty file.
+    if ($entryCount === 0) {
+        $zip->close();
+        throw new \RuntimeException('This paper has no question or option images to export.');
     }
 
     if (!$zip->close()) {
