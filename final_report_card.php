@@ -145,7 +145,7 @@ $promotionStatus = $finalTotal['status'] ?? null;
     <?php if ($finalTotal && $finalTotal['total_marks'] !== null): ?>
       <div><strong>Final Total Marks:</strong> <?= htmlspecialchars($finalTotal['total_marks'] ?? '-') ?></div>
       <div><strong>Final Percentage:</strong> <?= htmlspecialchars($finalTotal['percentage'] ?? '-') ?>%</div>
-      <div><strong>Final Rank:</strong> <?= htmlspecialchars($finalTotal['rank'] ?? 'N/A') ?></div>
+      <div><strong>Final Rank:</strong> <?= htmlspecialchars($finalTotal['rank'] ?: 'N/A') ?></div>
     <?php else: ?>
       <div class="text-muted">Final results have not been generated for this class yet (use "Final Roster" to generate them).</div>
     <?php endif; ?>

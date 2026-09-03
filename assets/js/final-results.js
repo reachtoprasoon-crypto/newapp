@@ -66,10 +66,23 @@
             const row = $('<tr>');
             row.append($('<td>').text(s.roll));
             row.append($('<td>').text(s.sname));
+            const grandTotalFailing = typeof s.percentage === 'number' && s.percentage < 40;
             data.header.forEach(function (h) {
                 h.subHeaders.forEach(function (sh) {
-                    const val = s[sh.key];
-                    row.append($('<td>').text(val === null || val === undefined ? '-' : val));
+                    const key = sh.key;
+                    const val = s[key];
+                    const isCumulative = sh.label === 'Total' || sh.label === 'Avg' || sh.label === '%' || sh.label === 'Rk';
+                    const isRank = key === 'rank';
+                    let isFailing = false;
+                    if (key === 'grandTotal' || key === 'percentage') {
+                        isFailing = grandTotalFailing;
+                    } else if (!isRank && typeof val === 'number' && sh.maxm) {
+                        isFailing = val < sh.maxm * 0.4;
+                    }
+                    const cell = $('<td>').text(val === null || val === undefined ? '-' : val);
+                    if (isCumulative) cell.addClass('fw-bold');
+                    if (isFailing) cell.addClass('text-danger').addClass('text-decoration-underline');
+                    row.append(cell);
                 });
             });
             tbody.append(row);

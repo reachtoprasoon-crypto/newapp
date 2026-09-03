@@ -96,6 +96,56 @@ function get_class_roster_data($mysqli, $sclass, $termid, $report) {
     }, $reportData['studentData']);
     set_hic_data($mysqli, $sclass, $termid, $report, $hicStudents);
 
+    // Rank: only students who are not failing (<40%) any individual subject
+    // total or the grand percentage are eligible, matching get_final_roster_data.
+    $subjectMaxBySubid = [];
+    foreach ($reportData['header'] as $mainHeader) {
+        if (empty($mainHeader['subid'])) continue;
+        foreach ($mainHeader['subHeaders'] as $sh) {
+            if ($sh['key'] === 'total_' . $mainHeader['subid']) {
+                $subjectMaxBySubid[$mainHeader['subid']] = $sh['maxm'];
+                break;
+            }
+        }
+    }
+
+    foreach ($reportData['studentData'] as &$student) {
+        $eligible = true;
+        foreach ($subjectMaxBySubid as $subid => $maxm) {
+            $score = $student['total_' . $subid] ?? null;
+            if ($score !== null && $maxm > 0 && $score < ($maxm * 0.4)) {
+                $eligible = false;
+                break;
+            }
+        }
+        if ($eligible && is_numeric($student['percentage'] ?? null) && $student['percentage'] < 40) {
+            $eligible = false;
+        }
+        $student['isEligibleForRank'] = $eligible;
+    }
+    unset($student);
+
+    $eligibleStudents = array_values(array_filter($reportData['studentData'], fn($s) => $s['isEligibleForRank']));
+    usort($eligibleStudents, fn($a, $b) => $b['grandTotal'] <=> $a['grandTotal']);
+
+    foreach ($reportData['studentData'] as &$student) {
+        if (!$student['isEligibleForRank']) {
+            $student['rank'] = 'N/A';
+            continue;
+        }
+        $rank = 0;
+        foreach ($eligibleStudents as $i => $e) {
+            if ($e['grandTotal'] === $student['grandTotal']) {
+                $rank = $i + 1;
+                break;
+            }
+        }
+        $student['rank'] = $rank > 0 ? $rank : 'N/A';
+    }
+    unset($student);
+
+    $reportData['header'][] = ['label' => 'Rank', 'subshort' => 'Rank', 'colSpan' => 1, 'subHeaders' => [['label' => 'Rk', 'key' => 'rank']]];
+
     return [
         'header' => $reportData['header'],
         'studentData' => $reportData['studentData'],

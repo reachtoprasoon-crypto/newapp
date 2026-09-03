@@ -50,8 +50,9 @@
             const markCount = h.subHeaders.filter(function (sh) { return sh.key.indexOf('mark_') === 0; }).length;
             const finalSubs = markCount > 1 ? h.subHeaders : h.subHeaders.filter(function (sh) { return sh.key.indexOf('total_') !== 0; });
             finalSubs.forEach(function (sh) {
-                headRow.append('<th>' + (h.label !== 'Grand Total' && h.label !== 'Percentage' ? escapeHtml(h.subshort || h.label) + ' ' : '') + escapeHtml(sh.label) + '</th>');
-                flatCols.push(sh.key);
+                const skipPrefix = h.label === 'Grand Total' || h.label === 'Percentage' || h.label === 'Rank';
+                headRow.append('<th>' + (skipPrefix ? '' : escapeHtml(h.subshort || h.label) + ' ') + escapeHtml(sh.label) + '</th>');
+                flatCols.push({ key: sh.key, maxm: sh.maxm });
             });
         });
         roster.gradeSubjects.forEach(function (gs) {
@@ -64,9 +65,24 @@
             const row = $('<tr>');
             row.append('<td>' + s.roll + '</td>');
             row.append('<td>' + escapeHtml(s.sname) + '</td>');
-            flatCols.forEach(function (key) {
+            const grandTotalFailing = typeof s.percentage === 'number' && s.percentage < 40;
+            flatCols.forEach(function (col) {
+                const key = col.key;
                 const v = s[key];
-                row.append('<td>' + (v === null || v === undefined ? '-' : escapeHtml(v)) + '</td>');
+                const isTotal = key.indexOf('total_') === 0 || key === 'grandTotal';
+                const isPercentage = key === 'percentage';
+                const isRank = key === 'rank';
+                let isFailing = false;
+                if (key === 'grandTotal' || key === 'percentage') {
+                    isFailing = grandTotalFailing;
+                } else if (!isRank && typeof v === 'number' && col.maxm) {
+                    isFailing = v < col.maxm * 0.4;
+                }
+                const classes = [];
+                if (isTotal || isPercentage || isRank) classes.push('fw-bold');
+                if (isFailing) classes.push('text-danger', 'text-decoration-underline');
+                const cls = classes.length ? ' class="' + classes.join(' ') + '"' : '';
+                row.append('<td' + cls + '>' + (v === null || v === undefined ? '-' : escapeHtml(v)) + '</td>');
             });
             roster.gradeSubjects.forEach(function (gs) {
                 const grade = (roster.studentGrades[s.sid] || {})[gs.subid];

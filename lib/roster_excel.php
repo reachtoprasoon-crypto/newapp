@@ -161,11 +161,12 @@ function generate_class_roster_excel($roster, $selectedClass) {
             $value = $student[$shc['key']] ?? 'N/A';
             $isTotal = str_starts_with($shc['key'], 'total_') || $shc['key'] === 'grandTotal';
             $isPercentage = $shc['key'] === 'percentage';
+            $isRank = $shc['key'] === 'rank';
 
             $isFailingMark = false;
             if ($shc['key'] === 'grandTotal' || $shc['key'] === 'percentage') {
                 $isFailingMark = $grandTotalFailing;
-            } elseif (is_numeric($value) && !empty($shc['maxm'])) {
+            } elseif (!$isRank && is_numeric($value) && !empty($shc['maxm'])) {
                 $isFailingMark = $value < ($shc['maxm'] * 0.4);
             }
 
@@ -173,7 +174,7 @@ function generate_class_roster_excel($roster, $selectedClass) {
             $sheet->setCellValue($ref, $value);
             rx_apply_style($sheet, $ref, [
                 'fill' => $isAlt ? RX_ALT_FILL : null,
-                'bold' => $isTotal || $isPercentage || $isFailingMark,
+                'bold' => $isTotal || $isPercentage || $isRank || $isFailingMark,
                 'color' => $isFailingMark ? RX_FAIL_COLOR : null,
                 'underline' => $isFailingMark,
             ]);

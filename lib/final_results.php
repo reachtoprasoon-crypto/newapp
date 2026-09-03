@@ -317,7 +317,9 @@ function get_final_roster_data($mysqli, $sclass) {
             $tMax = $maxRec ? $maxRec['term_max'] : 0;
             $subHeaders[] = ['label' => 'T' . ($idx + 1), 'key' => 'sub_' . $sub['subid'] . '_term_' . $term['termid'], 'maxm' => $tMax];
         }
-        $subHeaders[] = ['label' => 'Avg', 'key' => 'sub_' . $sub['subid'] . '_avg', 'maxm' => 100];
+        if (count($terms) > 1) {
+            $subHeaders[] = ['label' => 'Avg', 'key' => 'sub_' . $sub['subid'] . '_avg', 'maxm' => 100];
+        }
         $header[] = ['label' => $sub['subshort'] ?: $sub['subname'], 'subid' => $sub['subid'], 'subHeaders' => $subHeaders];
     }
 
@@ -466,7 +468,9 @@ function get_final_roster_data($mysqli, $sclass) {
         }
 
         foreach ($studentData as $s) {
-            $rank = $s['rank'] === 'N/A' ? null : $s['rank'];
+            // finaltotal.rank is NOT NULL in the schema; 0 is the "unranked" sentinel
+            // (ranks otherwise start at 1) — consumers read it back with `?:`.
+            $rank = $s['rank'] === 'N/A' ? 0 : $s['rank'];
             db_execute(
                 $mysqli,
                 "INSERT INTO finaltotal (sid, total_marks, percentage, `rank`) VALUES (?, ?, ?, ?)",
