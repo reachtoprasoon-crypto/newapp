@@ -65,5 +65,5 @@
   <datalist id="sp_sectionList"></datalist>
 </div>
 
-<script src="/newapp/assets/js/paper-editor.js"></script>
-<script src="/newapp/assets/js/subjective-papers.js"></script>
+<script src="/newapp/assets/js/paper-editor.js?v=<?= filemtime(__DIR__ . '/../assets/js/paper-editor.js') ?>"></script>
+<script src="/newapp/assets/js/subjective-papers.js?v=<?= filemtime(__DIR__ . '/../assets/js/subjective-papers.js') ?>"></script>

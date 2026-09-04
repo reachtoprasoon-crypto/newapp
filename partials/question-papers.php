@@ -52,5 +52,5 @@
   </div>
 </div>
 
-<script src="/newapp/assets/js/paper-editor.js"></script>
-<script src="/newapp/assets/js/question-papers.js"></script>
+<script src="/newapp/assets/js/paper-editor.js?v=<?= filemtime(__DIR__ . '/../assets/js/paper-editor.js') ?>"></script>
+<script src="/newapp/assets/js/question-papers.js?v=<?= filemtime(__DIR__ . '/../assets/js/question-papers.js') ?>"></script>
