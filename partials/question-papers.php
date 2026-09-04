@@ -37,6 +37,10 @@
             <input type="text" class="form-control form-control-sm" id="qp_title" placeholder="e.g. Unit Test 1">
           </div>
         </div>
+        <div class="form-check form-switch mb-2">
+          <input class="form-check-input" type="checkbox" role="switch" id="qp_mathToggle" checked>
+          <label class="form-check-label small" for="qp_mathToggle">Special Characters &amp; Equations</label>
+        </div>
         <div id="qp_questions"></div>
         <button type="button" class="btn btn-outline-secondary btn-sm w-100 mt-2" id="qpBtnAddQuestion"><i class="fa-solid fa-plus me-1"></i>Add Question</button>
       </div>

@@ -2,6 +2,7 @@
     let isPrivileged = false;
     let myTid = Number(window.APP_DATA.tid);
     let qIndex = 0;
+    let mathEnabled = true;
 
     function classesForSelect() {
         return isPrivileged ? window.APP_DATA.classes : window.APP_DATA.teacherClasses;
@@ -56,7 +57,7 @@
 
     // Wires a textarea/input to its formatting toolbar + live preview pane.
     function wireTextEditor(id, $mount, $preview, initialValue) {
-        paperAttachToolbar($mount, id);
+        paperAttachToolbar($mount, id, { mathVisible: mathEnabled });
         $('#' + id).on('input', function () { paperRenderPreview($(this).val(), $preview); });
         paperRenderPreview(initialValue, $preview);
     }
@@ -136,6 +137,8 @@
     function openForm(paper) {
         $('#qp_questions').empty();
         qIndex = 0;
+        mathEnabled = true;
+        $('#qp_mathToggle').prop('checked', true);
         $('#qp_qpid').val(paper ? paper.qpid : '');
         $('#qpFormTitle').text(paper ? 'Edit MCQ Paper' : 'New MCQ Paper');
         populateClassSelect();
@@ -154,6 +157,10 @@
     $('#qp_sclass').on('change', function () { populateSubjectSelect($(this).val()); });
     $('#qpBtnNew').on('click', function () { openForm(null); });
     $('#qpBtnAddQuestion').on('click', function () { addQuestionCard(null); });
+    $('#qp_mathToggle').on('change', function () {
+        mathEnabled = $(this).is(':checked');
+        $('#qp_questions .paper-math-row').toggleClass('d-none', !mathEnabled);
+    });
 
     function loadPapers() {
         ajaxCall({ url: '/api/question-papers/list.php', method: 'GET', silent: true }).then(function (data) {

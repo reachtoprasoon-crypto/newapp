@@ -41,7 +41,10 @@ function paperInsertSnippet(textareaId, prefix, suffix) {
 
 // Builds the toolbar HTML and wires its buttons to a given textarea id.
 // $mount: a jQuery container to append the toolbar into, right above the textarea.
-function paperAttachToolbar($mount, textareaId) {
+// opts.mathVisible (default true): initial visibility of the special-character/
+// equation button row (tagged .paper-math-row so a caller can toggle it later).
+function paperAttachToolbar($mount, textareaId, opts) {
+    opts = opts || {};
     const $bar = $('<div class="paper-toolbar border rounded-top bg-light p-1">');
     const $formatRow = $('<div class="d-flex flex-wrap gap-1 mb-1">');
     const buttons = [
@@ -60,7 +63,8 @@ function paperAttachToolbar($mount, textareaId) {
     });
     $bar.append($formatRow);
 
-    const $mathRow = $('<div class="d-flex flex-wrap gap-1">');
+    const $mathRow = $('<div class="d-flex flex-wrap gap-1 paper-math-row">');
+    if (opts.mathVisible === false) $mathRow.addClass('d-none');
     PAPER_MATH_SYMBOLS.forEach(function (item) {
         const $btn = $('<button type="button" class="btn btn-sm btn-outline-primary paper-math-symbol-btn" data-latex="' + $('<div>').text(item.s).html() + '"></button>');
         $btn.on('click', function () { paperInsertSnippet(textareaId, item.s, ''); });
