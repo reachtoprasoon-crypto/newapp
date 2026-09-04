@@ -5,11 +5,8 @@ require_once __DIR__ . '/../../lib/auth.php';
 require_once __DIR__ . '/../../lib/db.php';
 require_once __DIR__ . '/../../lib/data_collection.php';
 
-require_login_ajax();
+require_staff_role_ajax([10]);
 $user = current_user();
-if ($user['type'] !== 'staff') {
-    json_error('Only staff can create data-collection forms.', 403);
-}
 
 $id = isset($_POST['id']) && $_POST['id'] !== '' ? (int) $_POST['id'] : null;
 $title = trim($_POST['title'] ?? '');
@@ -26,15 +23,8 @@ foreach ($fields as $f) {
     }
 }
 
-if ($id) {
-    // Ownership check (admins may edit any form).
-    $existing = db_fetch_one($mysqli, "SELECT tid FROM data_collection_forms WHERE id = ?", 'i', [$id]);
-    if ($existing === null) {
-        json_error('Form not found.', 404);
-    }
-    if ((int) $user['ttype'] !== 10 && (int) $existing['tid'] !== (int) $user['tid']) {
-        json_error('You do not have permission to edit this form.', 403);
-    }
+if ($id && db_fetch_one($mysqli, "SELECT id FROM data_collection_forms WHERE id = ?", 'i', [$id]) === null) {
+    json_error('Form not found.', 404);
 }
 
 $result = upsert_data_collection_form($mysqli, $id, (int) $user['tid'], $title, $description, $fields, $isActive);

@@ -38,7 +38,6 @@ function get_nav_tabs_for_role($ttype) {
             ['slug' => 'final-results', 'label' => 'Final Results', 'icon' => 'fa-trophy'],
             ['slug' => 'students-total', 'label' => 'Students Total', 'icon' => 'fa-ranking-star'],
             ['slug' => 'communications', 'label' => 'Communications', 'icon' => 'fa-bullhorn'],
-            ['slug' => 'data-collection', 'label' => 'Data Collection', 'icon' => 'fa-clipboard-list'],
             ['slug' => 'subjective-papers', 'label' => 'Subjective Papers', 'icon' => 'fa-file-pen'],
             ['slug' => 'activity-log', 'label' => 'Activity Log', 'icon' => 'fa-clock-rotate-left'],
         ];
@@ -59,7 +58,6 @@ function get_nav_tabs_for_role($ttype) {
         ['slug' => 'marks', 'label' => 'Marks / Grades', 'icon' => 'fa-pen'],
         ['slug' => 'attendance', 'label' => 'Attendance', 'icon' => 'fa-calendar-check'],
         ['slug' => 'communications', 'label' => 'Communications', 'icon' => 'fa-bullhorn'],
-        ['slug' => 'data-collection', 'label' => 'Data Collection', 'icon' => 'fa-clipboard-list'],
         ['slug' => 'question-papers', 'label' => 'Question Papers', 'icon' => 'fa-list-check'],
         ['slug' => 'subjective-papers', 'label' => 'Subjective Papers', 'icon' => 'fa-file-pen'],
     ];

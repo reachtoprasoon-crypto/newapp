@@ -14,13 +14,8 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 
-require_login_page();
+require_staff_role_page([10]);
 set_time_limit(300);
-$user = current_user();
-if ($user['type'] !== 'staff') {
-    http_response_code(403);
-    die('Forbidden.');
-}
 
 $formId = isset($_GET['form_id']) ? (int) $_GET['form_id'] : 0;
 if (!$formId) {
@@ -28,14 +23,10 @@ if (!$formId) {
     die('form_id is required.');
 }
 
-$form = db_fetch_one($mysqli, "SELECT title, tid, fields_json FROM data_collection_forms WHERE id = ?", 'i', [$formId]);
+$form = db_fetch_one($mysqli, "SELECT title, fields_json FROM data_collection_forms WHERE id = ?", 'i', [$formId]);
 if ($form === null) {
     http_response_code(404);
     die('Form not found.');
-}
-if ((int) $user['ttype'] !== 10 && (int) $form['tid'] !== (int) $user['tid']) {
-    http_response_code(403);
-    die('You do not have permission to export these responses.');
 }
 
 $fields = json_decode($form['fields_json'], true) ?: [];
