@@ -5,3 +5,4 @@ vsecadlu_reportcard202627.sql
 config.php.bak.*
 .env
 .env.bak.*
+error_log

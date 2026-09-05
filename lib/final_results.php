@@ -468,9 +468,7 @@ function get_final_roster_data($mysqli, $sclass) {
         }
 
         foreach ($studentData as $s) {
-            // finaltotal.rank is NOT NULL in the schema; 0 is the "unranked" sentinel
-            // (ranks otherwise start at 1) — consumers read it back with `?:`.
-            $rank = $s['rank'] === 'N/A' ? 0 : $s['rank'];
+            $rank = $s['rank'] === 'N/A' ? null : $s['rank'];
             db_execute(
                 $mysqli,
                 "INSERT INTO finaltotal (sid, total_marks, percentage, `rank`) VALUES (?, ?, ?, ?)",

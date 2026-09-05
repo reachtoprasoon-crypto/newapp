@@ -756,7 +756,7 @@ function generate_final_report_card_excel($input) {
 
         $finalTotal = $student['snapshot']['total'] ?? null;
         $summaryItems = [
-            ['r1' => [23, 2, 5], 'r2' => [24, 2, 5], 'label' => 'RANK', 'value' => $finalTotal['rank'] ?? null ?: 'N/A'],
+            ['r1' => [23, 2, 5], 'r2' => [24, 2, 5], 'label' => 'RANK', 'value' => $finalTotal['rank'] ?? 'N/A'],
             ['r1' => [23, 6, 21], 'r2' => [24, 6, 21], 'label' => 'PROMOTION', 'value' => $finalTotal['status'] ?? ''],
             ['r1' => [23, 22, 26], 'r2' => [24, 22, 26], 'label' => 'REOPENS ON', 'value' => $reopenText ?: ''],
         ];
