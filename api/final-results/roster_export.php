@@ -18,14 +18,16 @@ if ($user['type'] !== 'staff') {
 }
 
 $sclass = trim($_GET['sclass'] ?? '');
-if ($sclass === '') {
+$termid = isset($_GET['termid']) ? (int) $_GET['termid'] : 0;
+$report = isset($_GET['report']) ? (int) $_GET['report'] : 0;
+if ($sclass === '' || !$termid || !$report) {
     http_response_code(400);
-    die('sclass is required.');
+    die('sclass, termid and report are required.');
 }
 
 require_class_access_page($mysqli, $sclass);
 
-$roster = get_final_roster_data($mysqli, $sclass);
+$roster = get_final_roster_data($mysqli, $sclass, $termid, $report);
 if (empty($roster['studentData'])) {
     http_response_code(404);
     die('No final roster data available for this class.');

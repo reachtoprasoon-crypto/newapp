@@ -11,14 +11,16 @@ require_once __DIR__ . '/../../lib/final_results.php';
 require_login_ajax();
 
 $sclass = trim($_GET['sclass'] ?? '');
-if ($sclass === '') {
-    json_error('sclass is required.');
+$termid = isset($_GET['termid']) ? (int) $_GET['termid'] : 0;
+$report = isset($_GET['report']) ? (int) $_GET['report'] : 0;
+if ($sclass === '' || !$termid || !$report) {
+    json_error('sclass, termid and report are required.');
 }
 
 require_class_access_ajax($mysqli, $sclass);
 
 try {
-    json_ok(get_final_roster_data($mysqli, $sclass));
+    json_ok(get_final_roster_data($mysqli, $sclass, $termid, $report));
 } catch (Exception $e) {
     json_error('Database operation failed: ' . $e->getMessage());
 }

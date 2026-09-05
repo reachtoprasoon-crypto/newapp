@@ -10,6 +10,15 @@
         (window.APP_DATA.terms || []).forEach(function (t) {
             termSel.append($('<option>').val(t.termid).text(t.termname));
         });
+
+        const rosterTermSel = $('#fr_rosterTerm').empty();
+        (window.APP_DATA.terms || []).forEach(function (t) {
+            rosterTermSel.append($('<option>').val(t.termid).text(t.termname));
+        });
+        const activeTerm = (window.APP_DATA.controls || []).find(function (c) { return c.ctype === 'term' && c.allowed; });
+        const activeReport = (window.APP_DATA.controls || []).find(function (c) { return c.ctype === 'report' && c.allowed; });
+        if (activeTerm) $('#fr_rosterTerm').val(activeTerm.cval);
+        if (activeReport) $('#fr_rosterReport').val(activeReport.cval);
     }
 
     function switchSub(newSub) {
@@ -32,8 +41,13 @@
 
     function loadRoster() {
         const sclass = $('#fr_class').val();
-        if (!sclass) return;
-        ajaxCall({ url: '/api/final-results/roster.php', method: 'GET', data: { sclass: sclass } })
+        const termid = $('#fr_rosterTerm').val();
+        const report = $('#fr_rosterReport').val();
+        if (!sclass || !termid || !report) {
+            toastError('Select class, term and report first.');
+            return;
+        }
+        ajaxCall({ url: '/api/final-results/roster.php', method: 'GET', data: { sclass: sclass, termid: termid, report: report } })
             .then(function (data) {
                 renderRoster(data);
                 $('#btnExportFinalRoster').removeClass('d-none');
@@ -42,8 +56,10 @@
 
     function exportFinalRoster() {
         const sclass = $('#fr_class').val();
-        if (!sclass) return;
-        triggerDownload(BASE_URL + '/api/final-results/roster_export.php?sclass=' + encodeURIComponent(sclass));
+        const termid = $('#fr_rosterTerm').val();
+        const report = $('#fr_rosterReport').val();
+        if (!sclass || !termid || !report) return;
+        triggerDownload(BASE_URL + '/api/final-results/roster_export.php?sclass=' + encodeURIComponent(sclass) + '&termid=' + termid + '&report=' + report);
     }
 
     function exportPromotion() {
@@ -60,6 +76,10 @@
                 headRow.append('<th>' + (h.label !== 'Grand Total' && h.label !== 'Percentage' && h.label !== 'Rank' ? h.label + ' ' : '') + sh.label + '</th>');
             });
         });
+        (data.gradeSubjects || []).forEach(function (gs) {
+            headRow.append('<th>' + $('<div>').text(gs.subshort || gs.subname).html() + '</th>');
+        });
+        headRow.append('<th>Attendance</th><th>Comment ID</th>');
 
         const tbody = $('#fr_rosterBody').empty();
         data.studentData.forEach(function (s) {
@@ -85,6 +105,11 @@
                     row.append(cell);
                 });
             });
+            (data.gradeSubjects || []).forEach(function (gs) {
+                row.append($('<td>').text(s['grade_' + gs.subid] || 'N/A'));
+            });
+            row.append($('<td>').text(s.attendance || 'N/A'));
+            row.append($('<td>').text(s.cmid === null || s.cmid === undefined ? 'N/A' : s.cmid));
             tbody.append(row);
         });
     }

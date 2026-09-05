@@ -243,7 +243,9 @@ function upsert_promotion($mysqli, $sclass, $promotions, $actorId, $actorName) {
 // NOTE: this "get" also WRITES — it recomputes and overwrites finalhic,
 // finalhictotal, finaltotal for the class as a side effect, exactly like the source.
 
-function get_final_roster_data($mysqli, $sclass) {
+// $termid/$report: which term+report's grades/attendance/comment to pull for
+// each student (marks/rank/percentage always aggregate every scheduled term).
+function get_final_roster_data($mysqli, $sclass, $termid, $report) {
     $students = db_fetch_all($mysqli, "SELECT sid, roll, sname, schno FROM students WHERE sclass = ? ORDER BY roll", 's', [$sclass]);
     if (empty($students)) {
         return ['header' => [], 'studentData' => [], 'gradeSubjects' => []];
@@ -298,15 +300,7 @@ function get_final_roster_data($mysqli, $sclass) {
     );
     $scheduleMax = array_map(fn($r) => ['subid' => (int) $r['subid'], 'termid' => (int) $r['termid'], 'term_max' => (float) $r['term_max']], $scheduleMaxRows);
 
-    $lastScheduleRow = db_fetch_one(
-        $mysqli,
-        "SELECT termid, report FROM termschedule WHERE sclass = ? AND termid IN ($termPlaceholders) ORDER BY termid DESC, report DESC LIMIT 1",
-        's' . $termTypes,
-        [$sclass, ...$activeTermIds]
-    );
-    $lastContext = $lastScheduleRow
-        ? ['termid' => (int) $lastScheduleRow['termid'], 'report' => (int) $lastScheduleRow['report']]
-        : ['termid' => end($activeTermIds), 'report' => 1];
+    $lastContext = ['termid' => (int) $termid, 'report' => (int) $report];
 
     // Build header
     $header = [];
