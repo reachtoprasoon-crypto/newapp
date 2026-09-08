@@ -261,7 +261,7 @@ function generate_term_report_card_excel($input) {
             }
         }
 
-        rc_merge_set($sheet, 8, 2, 6, 'SUBJECTS', ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
+        rc_merge_set($sheet, 8, 2, 7, 'SUBJECTS', ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
 
         $activeSubjects = array_values(array_filter($header, function ($h) use ($student) {
             if ($h['label'] === 'Grand Total' || $h['label'] === 'Percentage' || !isset($h['subid'])) return false;
@@ -289,22 +289,29 @@ function generate_term_report_card_excel($input) {
             return ['start' => $start, 'span' => $span, 'label' => $label];
         };
 
+        // MM is now H-K (8-11, 4 cols) in every format, to line up with the
+        // widened B-G subject-name column. Senior's EXAM/HIC keep their old
+        // start/span — MM grew by shifting its start (not its end), so
+        // nothing after it needs to move. The two junior formats' MM instead
+        // grew in both directions (start -1, end +2 vs their old 7-9), so
+        // EXAM/TOTAL/HIC are resized (not just shifted) to still end at
+        // column 21, leaving the sidebar/spacer columns untouched.
         $assessmentCols = [];
         if ($useSeniorFormat) {
-            $mmCol = $setupMetricHeader('MM', 7, 5);
+            $mmCol = $setupMetricHeader('MM', 8, 4);
             $assessmentCols[] = $setupMetricHeader('EXAM', 12, 5);
             $assessmentCols[] = $setupMetricHeader('HIC', 17, 5);
         } elseif ($showTwo) {
-            $mmCol = $setupMetricHeader('MM', 7, 3);
-            $assessmentCols[] = $setupMetricHeader($examLabels[0], 10, 3);
-            $assessmentCols[] = $setupMetricHeader($examLabels[1], 13, 3);
+            $mmCol = $setupMetricHeader('MM', 8, 4);
+            $assessmentCols[] = $setupMetricHeader($examLabels[0], 12, 2);
+            $assessmentCols[] = $setupMetricHeader($examLabels[1], 14, 2);
             $assessmentCols[] = $setupMetricHeader('TOTAL', 16, 3);
             $assessmentCols[] = $setupMetricHeader('HIC', 19, 3);
         } else {
-            $mmCol = $setupMetricHeader('MM', 7, 3);
+            $mmCol = $setupMetricHeader('MM', 8, 4);
             $labelStr = $examLabels[0] ?? 'EXAM';
-            $assessmentCols[] = $setupMetricHeader($labelStr, 10, 6);
-            $assessmentCols[] = $setupMetricHeader('HIC', 16, 6);
+            $assessmentCols[] = $setupMetricHeader($labelStr, 12, 5);
+            $assessmentCols[] = $setupMetricHeader('HIC', 17, 5);
         }
         $findCol = function ($label) use ($assessmentCols) {
             foreach ($assessmentCols as $c) if ($c['label'] === $label) return $c;
@@ -321,7 +328,7 @@ function generate_term_report_card_excel($input) {
             $isLastInGrid = $rIdx === 20;
             $borderSides = $isLastInGrid ? ['left', 'right', 'bottom'] : ['left', 'right'];
 
-            $sheet->mergeCells(rc_range($rIdx, 2, 6));
+            $sheet->mergeCells(rc_range($rIdx, 2, 7));
             $sheet->mergeCells(rc_range($rIdx, $mmCol['start'], $mmCol['start'] + $mmCol['span'] - 1));
             foreach ($assessmentCols as $col) {
                 $sheet->mergeCells(rc_range($rIdx, $col['start'], $col['start'] + $col['span'] - 1));
@@ -348,7 +355,10 @@ function generate_term_report_card_excel($input) {
                     rc_style($sheet, $exRef, ['size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
                     $hiRef = rc_col_letter(17) . $rIdx;
                     $sheet->setCellValue($hiRef, $subjectHics->{$subid} ?? '');
-                    rc_style($sheet, $hiRef, ['size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
+                    // Border must go on the full merged range (17-21), not just
+                    // the anchor cell, or the merge's true right/outer edge
+                    // (owned by column 21's own cell style) never gets one.
+                    rc_style($sheet, $hiRef . ':' . rc_col_letter(21) . $rIdx, ['size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
 
                     $gMax += $sMax;
                     $gObt += $sObt;
@@ -388,7 +398,9 @@ function generate_term_report_card_excel($input) {
                     if ($hC) {
                         $ref = rc_col_letter($hC['start']) . $rIdx;
                         $sheet->setCellValue($ref, $subjectHics->{$subid} ?? '');
-                        rc_style($sheet, $ref, ['size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
+                        // See the matching comment in the senior-format branch above.
+                        $hRange = $ref . ':' . rc_col_letter($hC['start'] + $hC['span'] - 1) . $rIdx;
+                        rc_style($sheet, $hRange, ['size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
                     }
                     $gMax += $sMax;
                     $gObt += $sObt;
@@ -398,13 +410,16 @@ function generate_term_report_card_excel($input) {
                 $sheet->setCellValue($mmRef, '');
                 foreach ($assessmentCols as $col) {
                     $ref = rc_col_letter($col['start']) . $rIdx;
+                    if ($col['label'] === 'HIC') {
+                        $ref .= ':' . rc_col_letter($col['start'] + $col['span'] - 1) . $rIdx;
+                    }
                     rc_style($sheet, $ref, ['halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
                 }
             }
         }
 
         $tR = 21;
-        rc_merge_set($sheet, $tR, 2, 6, 'TOTAL', ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_RIGHT, 'border' => 'all']);
+        rc_merge_set($sheet, $tR, 2, 7, 'TOTAL', ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_RIGHT, 'border' => 'all']);
         rc_merge_set($sheet, $tR, $mmCol['start'], $mmCol['start'] + $mmCol['span'] - 1, $gMax, ['bold' => true, 'size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
 
         if ($useSeniorFormat) {
@@ -702,12 +717,19 @@ function generate_final_report_card_excel($input) {
                 foreach ($rowMetrics as [$colStart, $val]) {
                     $ref = rc_col_letter($colStart) . $rIdx;
                     $sheet->setCellValue($ref, $val);
-                    rc_style($sheet, $ref, ['size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
+                    // HIC (colStart 19) needs its border on the full merged
+                    // range (19-21), not just the anchor cell, or the merge's
+                    // true right/outer edge never gets one.
+                    $styleRef = $colStart === 19 ? ($ref . ':' . rc_col_letter($colStart + 2) . $rIdx) : $ref;
+                    rc_style($sheet, $styleRef, ['size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
                 }
             } else {
                 $sheet->setCellValue($scRef, '');
                 foreach ([7, 10, 13, 16, 19] as $colStart) {
                     $ref = rc_col_letter($colStart) . $rIdx;
+                    if ($colStart === 19) {
+                        $ref .= ':' . rc_col_letter($colStart + 2) . $rIdx;
+                    }
                     rc_style($sheet, $ref, ['halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
                 }
             }
