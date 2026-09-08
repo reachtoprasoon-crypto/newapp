@@ -27,5 +27,5 @@ if ($paper === null) {
 }
 
 $rows = build_question_paper_answers_csv_rows($paper);
-$filename = 'Answers_' . preg_replace('/\s+/', '_', $paper['subshort']) . '_Positional.csv';
+$filename = question_paper_export_basename($paper) . '.csv';
 paper_stream_csv_rows($rows, $filename);

@@ -15,6 +15,7 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing as WorksheetDrawing;
 use PhpOffice\PhpSpreadsheet\Worksheet\MemoryDrawing;
+use PhpOffice\PhpSpreadsheet\Helper\Dimension as CssDimension;
 
 const RC_THEME_COLOR = 'FF095889';
 const RC_DATA_COLOR = 'FF000000';
@@ -211,8 +212,9 @@ function generate_term_report_card_excel($input) {
         $margins->setHeader(0.0);
         $margins->setFooter(0.0);
 
-        for ($i = 1; $i <= $gridEndCol; $i++) {
-            $width = ($i === 1) ? 2.0 : (($i === 22) ? 1.0 : 5.0);
+        $sheet->getColumnDimension('A')->setWidth(0.54, CssDimension::UOM_INCHES);
+        for ($i = 2; $i <= $gridEndCol; $i++) {
+            $width = ($i === 22) ? 1.0 : 5.0;
             $sheet->getColumnDimension(rc_col_letter($i))->setWidth($width);
         }
         for ($i = 1; $i <= 35; $i++) {
@@ -328,12 +330,12 @@ function generate_term_report_card_excel($input) {
             $scRef = rc_col_letter(2) . $rIdx;
             $mmRef = rc_col_letter($mmCol['start']) . $rIdx;
             rc_style($sheet, $scRef, ['halign' => Alignment::HORIZONTAL_LEFT, 'indent' => 1, 'border' => $borderSides]);
-            rc_style($sheet, $mmRef, ['halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
+            rc_style($sheet, $mmRef, ['size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
 
             if ($sub) {
                 $subid = $sub['subid'];
                 $sheet->setCellValue($scRef, $sub['label']);
-                rc_style($sheet, $scRef, ['color' => RC_THEME_COLOR, 'size' => 12]);
+                rc_style($sheet, $scRef, ['color' => RC_THEME_COLOR, 'size' => 14]);
 
                 if ($useSeniorFormat) {
                     $sMax = 0;
@@ -343,10 +345,10 @@ function generate_term_report_card_excel($input) {
                     $sheet->setCellValue($mmRef, $sMax ?: '');
                     $exRef = rc_col_letter(12) . $rIdx;
                     $sheet->setCellValue($exRef, $sObt ?: '');
-                    rc_style($sheet, $exRef, ['halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
+                    rc_style($sheet, $exRef, ['size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
                     $hiRef = rc_col_letter(17) . $rIdx;
                     $sheet->setCellValue($hiRef, $subjectHics->{$subid} ?? '');
-                    rc_style($sheet, $hiRef, ['halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
+                    rc_style($sheet, $hiRef, ['size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
 
                     $gMax += $sMax;
                     $gObt += $sObt;
@@ -368,7 +370,7 @@ function generate_term_report_card_excel($input) {
                                 $sMax += ($sh['maxm'] ?? 0);
                                 if (is_numeric($v)) $colTotals[$lab] += $v;
                             }
-                            rc_style($sheet, $dataRef, ['halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
+                            rc_style($sheet, $dataRef, ['size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
                         }
                     }
                     $sheet->setCellValue($mmRef, $sMax ?: '');
@@ -378,7 +380,7 @@ function generate_term_report_card_excel($input) {
                         if ($tC) {
                             $ref = rc_col_letter($tC['start']) . $rIdx;
                             $sheet->setCellValue($ref, $sObt ?: '');
-                            rc_style($sheet, $ref, ['halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
+                            rc_style($sheet, $ref, ['size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
                         }
                     }
 
@@ -386,7 +388,7 @@ function generate_term_report_card_excel($input) {
                     if ($hC) {
                         $ref = rc_col_letter($hC['start']) . $rIdx;
                         $sheet->setCellValue($ref, $subjectHics->{$subid} ?? '');
-                        rc_style($sheet, $ref, ['halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
+                        rc_style($sheet, $ref, ['size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
                     }
                     $gMax += $sMax;
                     $gObt += $sObt;
@@ -403,27 +405,27 @@ function generate_term_report_card_excel($input) {
 
         $tR = 21;
         rc_merge_set($sheet, $tR, 2, 6, 'TOTAL', ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_RIGHT, 'border' => 'all']);
-        rc_merge_set($sheet, $tR, $mmCol['start'], $mmCol['start'] + $mmCol['span'] - 1, $gMax, ['bold' => true, 'size' => 12, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
+        rc_merge_set($sheet, $tR, $mmCol['start'], $mmCol['start'] + $mmCol['span'] - 1, $gMax, ['bold' => true, 'size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
 
         if ($useSeniorFormat) {
-            rc_merge_set($sheet, $tR, 12, 16, $gObt, ['bold' => true, 'size' => 12, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
-            rc_merge_set($sheet, $tR, 17, 21, $hicData['termHic'] ?? '', ['bold' => true, 'size' => 12, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
+            rc_merge_set($sheet, $tR, 12, 16, $gObt, ['bold' => true, 'size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
+            rc_merge_set($sheet, $tR, 17, 21, $hicData['termHic'] ?? '', ['bold' => true, 'size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
         } else {
             foreach ($examLabels as $lab) {
                 $col = $findCol($lab);
                 if ($col) {
-                    rc_merge_set($sheet, $tR, $col['start'], $col['start'] + $col['span'] - 1, $colTotals[$lab], ['bold' => true, 'size' => 12, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
+                    rc_merge_set($sheet, $tR, $col['start'], $col['start'] + $col['span'] - 1, $colTotals[$lab], ['bold' => true, 'size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
                 }
             }
             if ($showTwo) {
                 $tC = $findCol('TOTAL');
                 if ($tC) {
-                    rc_merge_set($sheet, $tR, $tC['start'], $tC['start'] + $tC['span'] - 1, $gObt, ['bold' => true, 'size' => 12, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
+                    rc_merge_set($sheet, $tR, $tC['start'], $tC['start'] + $tC['span'] - 1, $gObt, ['bold' => true, 'size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
                 }
             }
             $hC = $findCol('HIC');
             if ($hC) {
-                rc_merge_set($sheet, $tR, $hC['start'], $hC['start'] + $hC['span'] - 1, $hicData['termHic'] ?? '', ['bold' => true, 'size' => 12, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
+                rc_merge_set($sheet, $tR, $hC['start'], $hC['start'] + $hC['span'] - 1, $hicData['termHic'] ?? '', ['bold' => true, 'size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
             }
         }
 
@@ -472,13 +474,13 @@ function generate_term_report_card_excel($input) {
         if ($studentComment && !empty(trim($studentComment['comment'] ?? '')) && trim($studentComment['comment']) !== '_') {
             $cR = 24;
             $sheet->setCellValue('B' . $cR, 'COMMENT:');
-            rc_style($sheet, 'B' . $cR, ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_LEFT]);
+            rc_style($sheet, 'B' . $cR, ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_LEFT, 'valign' => Alignment::VERTICAL_TOP]);
             $sheet->mergeCells('E' . $cR . ':' . rc_col_letter($gridEndCol) . ($cR + 2));
             $sheet->setCellValue('E' . $cR, $studentComment['comment']);
             rc_style($sheet, 'E' . $cR, ['size' => 12, 'wrap' => true, 'valign' => Alignment::VERTICAL_TOP]);
         }
 
-        $sigR = 30;
+        $sigR = 28;
         if (!empty($headerConfig['includeSignatures'])) {
             $sheet->setCellValue('B' . $sigR, 'CLASS TEACHER');
             rc_style($sheet, 'B' . $sigR, ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12]);
@@ -564,8 +566,9 @@ function generate_final_report_card_excel($input) {
         $margins->setHeader(0.0);
         $margins->setFooter(0.0);
 
-        for ($i = 1; $i <= $gridEndCol; $i++) {
-            $width = ($i === 1) ? 2.0 : (($i === 22) ? 1.0 : 5.0);
+        $sheet->getColumnDimension('A')->setWidth(0.54, CssDimension::UOM_INCHES);
+        for ($i = 2; $i <= $gridEndCol; $i++) {
+            $width = ($i === 22) ? 1.0 : 5.0;
             $sheet->getColumnDimension(rc_col_letter($i))->setWidth($width);
         }
         for ($i = 1; $i <= 35; $i++) {
@@ -678,7 +681,7 @@ function generate_final_report_card_excel($input) {
             if ($sub) {
                 $subid = (int) $sub['subid'];
                 $sheet->setCellValue($scRef, $sub['subname']);
-                rc_style($sheet, $scRef, ['color' => RC_THEME_COLOR, 'size' => 12]);
+                rc_style($sheet, $scRef, ['color' => RC_THEME_COLOR, 'size' => 14]);
 
                 $t1 = $getObt($subid, 1);
                 $t2 = $getObt($subid, 2);
@@ -699,7 +702,7 @@ function generate_final_report_card_excel($input) {
                 foreach ($rowMetrics as [$colStart, $val]) {
                     $ref = rc_col_letter($colStart) . $rIdx;
                     $sheet->setCellValue($ref, $val);
-                    rc_style($sheet, $ref, ['size' => 12, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
+                    rc_style($sheet, $ref, ['size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => $borderSides]);
                 }
             } else {
                 $sheet->setCellValue($scRef, '');
@@ -714,7 +717,7 @@ function generate_final_report_card_excel($input) {
         rc_merge_set($sheet, $tR, 2, 6, 'TOTAL', ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_RIGHT, 'border' => 'all']);
         $totMetrics = [[7, $mmSum], [10, $t1Sum], [13, $t2Sum], [16, $avgSum], [19, (int) round($grandThic)]];
         foreach ($totMetrics as [$colStart, $val]) {
-            rc_merge_set($sheet, $tR, $colStart, $colStart + 2, $val, ['bold' => true, 'size' => 12, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
+            rc_merge_set($sheet, $tR, $colStart, $colStart + 2, $val, ['bold' => true, 'size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
         }
 
         $sS = 23;
@@ -773,15 +776,17 @@ function generate_final_report_card_excel($input) {
             }
         }
         if ($studentComment && !empty(trim($studentComment['comment'] ?? '')) && trim($studentComment['comment']) !== '_') {
-            $cR = 26;
+            // Ends at row 27 (cR+2) so it doesn't collide with the merged
+            // CLASS TEACHER/PRINCIPAL row at 28 below.
+            $cR = 25;
             $sheet->setCellValue('B' . $cR, 'COMMENT:');
-            rc_style($sheet, 'B' . $cR, ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_LEFT]);
+            rc_style($sheet, 'B' . $cR, ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_LEFT, 'valign' => Alignment::VERTICAL_TOP]);
             $sheet->mergeCells('E' . $cR . ':' . rc_col_letter($gridEndCol) . ($cR + 2));
             $sheet->setCellValue('E' . $cR, $studentComment['comment']);
             rc_style($sheet, 'E' . $cR, ['size' => 11, 'wrap' => true, 'valign' => Alignment::VERTICAL_TOP]);
         }
 
-        $sigR = 32;
+        $sigR = 28;
         if (!empty($headerConfig['includeSignatures'])) {
             $sheet->setCellValue('B' . $sigR, 'CLASS TEACHER');
             rc_style($sheet, 'B' . $sigR, ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12]);

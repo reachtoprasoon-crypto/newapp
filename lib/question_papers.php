@@ -410,6 +410,15 @@ function question_paper_class_number($sclass) {
     return preg_match('/^\d+/', $sclass, $m) ? $m[0] : $sclass;
 }
 
+// "<teacher's first name>_<subject>_<class, no section>" — shared basename
+// for the answers CSV and images zip downloads (append the extension).
+function question_paper_export_basename($paper) {
+    $firstName = trim(strtok(trim($paper['tname']), ' '));
+    $subject = preg_replace('/\s+/', '_', $paper['subshort'] ?: $paper['subname']);
+    $classNumber = question_paper_class_number($paper['sclass']);
+    return preg_replace('/\s+/', '_', $firstName) . '_' . $subject . '_' . $classNumber;
+}
+
 function build_question_paper_answers_csv_rows($paper) {
     $folder = 'picques/' . preg_replace('/\s+/', '_', $paper['sclass']) . '/' . preg_replace('/\s+/', '_', $paper['subshort']);
     $classNumber = question_paper_class_number($paper['sclass']);

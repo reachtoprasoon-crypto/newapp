@@ -33,5 +33,5 @@ try {
     http_response_code(500);
     die('Could not build the zip: ' . $e->getMessage());
 }
-$filename = 'MCQ_' . preg_replace('/\s+/', '_', $paper['subname']) . '_' . preg_replace('/\s+/', '_', $paper['title']) . '_Images.zip';
+$filename = question_paper_export_basename($paper) . '.zip';
 paper_stream_zip_file($tmpFile, $filename);
