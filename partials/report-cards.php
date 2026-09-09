@@ -66,4 +66,4 @@
   </div>
 </div>
 
-<script src="/newapp/assets/js/report-cards.js"></script>
+<script src="/newapp/assets/js/report-cards.js?v=<?= filemtime(__DIR__ . '/../assets/js/report-cards.js') ?>"></script>
