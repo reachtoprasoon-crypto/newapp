@@ -133,6 +133,7 @@ function generate_term_report_card_excel($input) {
     $selectedClass = $input['selectedClass'];
     $selectedTermName = $input['selectedTermName'];
     $customTermLabel = $input['customTermLabel'] ?? null;
+    $termid = $input['termid'] ?? null;
     $report = $input['report'] ?? null;
     $watermarkBase64 = $input['watermarkBase64'] ?? null;
     $watermarkSize = $input['watermarkSize'] ?? 350;
@@ -246,7 +247,7 @@ function generate_term_report_card_excel($input) {
             ['r' => 4, 'items' => [[2, 5, false, $student['schno'] ?? ''], [6, 21, false, $student['sname']], [22, 26, false, rc_roman_numeral($studentDetails['sclass'] ?? '')]]],
             ['r' => 5, 'items' => [[2, 5, true, 'TERM/YEAR'], [6, 9, true, 'ATTENDANCE'], [10, 13, true, 'D.O.B.'], [14, 17, true, 'HOUSE'], [18, 21, true, 'WEIGHT'], [22, 26, true, 'HEIGHT']]],
             ['r' => 6, 'items' => [
-                [2, 5, false, $customTermLabel ?: rc_default_term_label($selectedClass, $selectedTermName, $report)],
+                [2, 5, false, $customTermLabel ?: rc_default_term_label($selectedClass, $selectedTermName, $termid, $report)],
                 [6, 9, false, ($studentAttendance['attendance'] ?? 'N/A') . ' / ' . ($studentAttendance['totalattendance'] ?? 'N/A')],
                 [10, 13, false, $studentDetails['dob'] ?? ''],
                 [14, 17, false, $studentDetails['house'] ?? 'N/A'],

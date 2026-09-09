@@ -128,7 +128,7 @@ function prc_find($arr, $key, $val) {
       <td colspan="5" class="label-cell">HEIGHT</td>
     </tr>
     <tr>
-      <td colspan="4" class="data-cell"><?= htmlspecialchars($customTermLabel ?: rc_default_term_label($sclass, $termName, $report)) ?></td>
+      <td colspan="4" class="data-cell"><?= htmlspecialchars($customTermLabel ?: rc_default_term_label($sclass, $termName, $termid, $report)) ?></td>
       <td colspan="4" class="data-cell"><?= (int) ($attendance['attendance'] ?? 0) ?>/<?= (int) ($attendance['totalattendance'] ?? 0) ?></td>
       <td colspan="4" class="data-cell"><?= htmlspecialchars($details['dob'] ?? '') ?></td>
       <td colspan="4" class="data-cell"><?= htmlspecialchars($details['house'] ?? 'N/A') ?></td>

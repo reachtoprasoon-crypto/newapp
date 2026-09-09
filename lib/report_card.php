@@ -24,13 +24,16 @@ function rc_academic_session() {
 // - Classes 5-8: Report 1 (the unit test) is "U<report>T<N>/<session>", e.g.
 //   "U1T1/2026-27"; Report 2 (the term exam) is "Term-<N>/<session>", same
 //   as senior classes.
-// - Anything else (no parseable term number, or outside those class ranges):
+// - Anything else (no usable term number, or outside those class ranges):
 //   falls back to the original "<term name> <year>" behavior.
-function rc_default_term_label($sclass, $termName, $report) {
-    if (!preg_match('/(\d+)/', (string) $termName, $termMatch)) {
+// $termid is used as the term number directly (terms.termid is 1/2/3 for
+// FIRST/SECOND/THIRD TERM etc. — termname itself is spelled out with no
+// digit to parse, e.g. "FIRST TERM", so termid is the only reliable source).
+function rc_default_term_label($sclass, $termName, $termid, $report) {
+    $termNum = (int) $termid;
+    if ($termNum <= 0) {
         return $termName . ' ' . date('Y');
     }
-    $termNum = $termMatch[1];
     $classNum = preg_match('/^\d+/', (string) $sclass, $classMatch) ? (int) $classMatch[0] : 0;
     $session = rc_academic_session();
 

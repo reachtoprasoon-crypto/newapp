@@ -88,6 +88,7 @@ $spreadsheet = generate_term_report_card_excel([
     'selectedClass' => $sclass,
     'selectedTermName' => $termName,
     'customTermLabel' => $customTermLabel ?: null,
+    'termid' => $termid,
     'report' => $report,
     'watermarkBase64' => $watermarkBase64,
     'watermarkSize' => $watermarkSize,
