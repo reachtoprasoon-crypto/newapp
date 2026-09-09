@@ -162,12 +162,15 @@ function update_student_roll_numbers($mysqli, $students) {
     }
 }
 
-function bulk_update_student_photos($mysqli, $updates) {
+// Scoped to $sclass (not just schno) so a photo can never land on a
+// same-numbered student in a different class — schno isn't guaranteed
+// unique across the "13Z" soft-delete sentinel class and re-enrollments.
+function bulk_update_student_photos($mysqli, $updates, $sclass) {
     mysqli_begin_transaction($mysqli);
     try {
         $updatedCount = 0;
         foreach ($updates as $u) {
-            $result = db_execute($mysqli, "UPDATE students SET photo = ? WHERE schno = ?", 'si', [$u['photo'], $u['schno']]);
+            $result = db_execute($mysqli, "UPDATE students SET photo = ? WHERE schno = ? AND sclass = ?", 'sis', [$u['photo'], $u['schno'], $sclass]);
             if ($result['affected'] > 0) {
                 $updatedCount++;
             }

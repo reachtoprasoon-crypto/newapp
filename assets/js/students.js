@@ -18,6 +18,10 @@
         window.APP_DATA.classes.forEach(function (c) {
             formClassSelect.append($('<option>').val(c).text('Class ' + c));
         });
+        const bulkPhotoClassSelect = $('#bulkPhotoClass');
+        window.APP_DATA.classes.forEach(function (c) {
+            bulkPhotoClassSelect.append($('<option>').val(c).text('Class ' + c));
+        });
         const houseSelect = $('#sf_hid');
         window.APP_DATA.houses.forEach(function (h) {
             houseSelect.append($('<option>').val(h.hid).text(h.house));
@@ -190,12 +194,18 @@
     }
 
     function applyBulkPhotos() {
+        const sclass = $('#bulkPhotoClass').val();
+        if (!sclass) {
+            toastError('Select a class first.');
+            return;
+        }
         const files = $('#bulkPhotoFiles')[0].files;
         if (!files.length) {
             toastError('Please select at least one photo.');
             return;
         }
         const formData = new FormData();
+        formData.append('sclass', sclass);
         for (let i = 0; i < files.length; i++) {
             formData.append('photos[]', files[i]);
         }
@@ -236,7 +246,11 @@
     });
     $('#btnEditRollNumbers').on('click', openRollNumberEditor);
     $('#btnSaveRollNumbers').on('click', saveRollNumbers);
-    $('#btnBulkPhoto').on('click', function () { new bootstrap.Modal('#bulkPhotoModal').show(); });
+    $('#btnBulkPhoto').on('click', function () {
+        $('#bulkPhotoClass').val($('#studentClassSelect').val() || '');
+        $('#bulkPhotoFiles').val('');
+        new bootstrap.Modal('#bulkPhotoModal').show();
+    });
     $('#btnApplyBulkPhoto').on('click', applyBulkPhotos);
 
     let notesCurrentSid = null;

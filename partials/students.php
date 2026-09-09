@@ -153,7 +153,9 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <p class="text-muted small">File names must be the Scholar Number (e.g. 1234.jpg). Select a class first.</p>
+        <p class="text-muted small">File names must be the Scholar Number (e.g. 1234.jpg).</p>
+        <label class="form-label small fw-bold">Class</label>
+        <select class="form-select form-select-sm mb-3" id="bulkPhotoClass"><option value="">Select a class</option></select>
         <input type="file" class="form-control" id="bulkPhotoFiles" accept="image/*" multiple>
       </div>
       <div class="modal-footer">
@@ -183,4 +185,4 @@
   </div>
 </div>
 
-<script src="/newapp/assets/js/students.js"></script>
+<script src="/newapp/assets/js/students.js?v=<?= filemtime(__DIR__ . '/../assets/js/students.js') ?>"></script>

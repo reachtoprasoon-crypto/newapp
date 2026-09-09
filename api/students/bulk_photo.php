@@ -8,9 +8,16 @@
 require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../../lib/respond.php';
 require_once __DIR__ . '/../../lib/auth.php';
+require_once __DIR__ . '/../../lib/permissions.php';
 require_once __DIR__ . '/../../lib/students.php';
 
 require_staff_role_ajax([10, 5]);
+
+$sclass = trim($_POST['sclass'] ?? '');
+if ($sclass === '') {
+    json_error('sclass is required.');
+}
+require_class_access_ajax($mysqli, $sclass);
 
 if (empty($_FILES['photos']) || !is_array($_FILES['photos']['tmp_name'])) {
     json_error('No files uploaded.');
@@ -46,7 +53,7 @@ if (empty($updates)) {
     json_error('No valid photos found. File names must be the Scholar Number, e.g. 1234.jpg.');
 }
 
-$result = bulk_update_student_photos($mysqli, $updates);
+$result = bulk_update_student_photos($mysqli, $updates, $sclass);
 if (!$result['success']) {
     json_error($result['error']);
 }
