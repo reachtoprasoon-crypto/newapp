@@ -586,8 +586,7 @@ function generate_final_report_card_excel($input) {
 
         $sheet->getColumnDimension('A')->setWidth(0.54, CssDimension::UOM_INCHES);
         for ($i = 2; $i <= $gridEndCol; $i++) {
-            $width = ($i === 22) ? 1.0 : 5.0;
-            $sheet->getColumnDimension(rc_col_letter($i))->setWidth($width);
+            $sheet->getColumnDimension(rc_col_letter($i))->setWidth(5.0);
         }
         for ($i = 1; $i <= 35; $i++) {
             $sheet->getRowDimension($i)->setRowHeight($i === 7 ? 5.0 : 21.0);
@@ -611,18 +610,54 @@ function generate_final_report_card_excel($input) {
             }
         }
 
+        // Student photo: V3:Z6 (5 cols x 4 rows, matching the personal-details
+        // grid's height), scaled to fit within that box preserving aspect
+        // ratio and centered, same reasoning as the watermark above. Frame
+        // is drawn regardless of whether a photo exists.
+        $sheet->mergeCells('V3:Z6');
+        rc_style($sheet, 'V3:Z6', ['border' => 'outline']);
+        if (!empty($student['photo'])) {
+            try {
+                $photoParts = explode(',', $student['photo'], 2);
+                $photoBytes = isset($photoParts[1]) ? base64_decode($photoParts[1]) : false;
+                $photoImage = $photoBytes !== false ? @imagecreatefromstring($photoBytes) : false;
+                if ($photoImage !== false) {
+                    $boxWidthPx = 5 * 5.0 * 7;
+                    $boxHeightPx = 4 * 21.0 * 4 / 3;
+                    $imgW = imagesx($photoImage);
+                    $imgH = imagesy($photoImage);
+                    $scale = min($boxWidthPx / $imgW, $boxHeightPx / $imgH);
+                    $drawW = $imgW * $scale;
+                    $drawH = $imgH * $scale;
+
+                    $drawing = new MemoryDrawing();
+                    $drawing->setImageResource($photoImage);
+                    $drawing->setRenderingFunction(MemoryDrawing::RENDERING_DEFAULT);
+                    $drawing->setMimeType(MemoryDrawing::MIMETYPE_DEFAULT);
+                    $drawing->setCoordinates('V3');
+                    $drawing->setOffsetX((int) round(($boxWidthPx - $drawW) / 2));
+                    $drawing->setOffsetY((int) round(($boxHeightPx - $drawH) / 2));
+                    $drawing->setWidth((int) round($drawW));
+                    $drawing->setHeight((int) round($drawH));
+                    $drawing->setWorksheet($sheet);
+                }
+            } catch (Throwable $e) {
+                // Non-fatal — same swallow-and-continue as the watermark.
+            }
+        }
+
         $attendance = $student['snapshot']['attendance'] ?? null;
         $headerGrid = [
-            ['r' => 3, 'items' => [[2, 5, true, 'SCHOLAR NO.'], [6, 21, true, 'NAME'], [22, 26, true, 'CLASS']]],
-            ['r' => 4, 'items' => [[2, 5, false, $student['schno'] ?? ''], [6, 21, false, $student['sname']], [22, 26, false, rc_roman_numeral($student['sclass'] ?? '')]]],
-            ['r' => 5, 'items' => [[2, 5, true, 'TERM/YEAR'], [6, 9, true, 'ATTENDANCE'], [10, 13, true, 'D.O.B.'], [14, 17, true, 'HOUSE'], [18, 21, true, 'WEIGHT'], [22, 26, true, 'HEIGHT']]],
+            ['r' => 3, 'items' => [[2, 5, true, 'SCHOLAR NO.'], [6, 17, true, 'NAME'], [18, 21, true, 'CLASS']]],
+            ['r' => 4, 'items' => [[2, 5, false, $student['schno'] ?? ''], [6, 17, false, $student['sname']], [18, 21, false, rc_roman_numeral($student['sclass'] ?? '')]]],
+            ['r' => 5, 'items' => [[2, 5, true, 'TERM/YEAR'], [6, 8, true, 'ATTENDANCE'], [9, 11, true, 'D.O.B.'], [12, 14, true, 'HOUSE'], [15, 17, true, 'WEIGHT'], [18, 21, true, 'HEIGHT']]],
             ['r' => 6, 'items' => [
                 [2, 5, false, 'FINAL ' . date('Y')],
-                [6, 9, false, ($attendance['attendance'] ?? 'N/A') . ' / ' . ($attendance['totalattendance'] ?? 'N/A')],
-                [10, 13, false, $student['dob'] ?? ''],
-                [14, 17, false, $student['house'] ?? 'N/A'],
-                [18, 21, false, ($student['wt'] ?? '') . ' Kg.'],
-                [22, 26, false, ($student['ht'] ?? '') . ' Cm.'],
+                [6, 8, false, ($attendance['attendance'] ?? 'N/A') . ' / ' . ($attendance['totalattendance'] ?? 'N/A')],
+                [9, 11, false, $student['dob'] ?? ''],
+                [12, 14, false, $student['house'] ?? 'N/A'],
+                [15, 17, false, ($student['wt'] ?? '') . ' Kg.'],
+                [18, 21, false, ($student['ht'] ?? '') . ' Cm.'],
             ]],
         ];
         foreach ($headerGrid as $row) {
