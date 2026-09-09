@@ -588,6 +588,9 @@ function generate_final_report_card_excel($input) {
         for ($i = 2; $i <= $gridEndCol; $i++) {
             $sheet->getColumnDimension(rc_col_letter($i))->setWidth(5.0);
         }
+        // V is a thin gutter between the personal-details grid and the photo
+        // block, not a normal data column — same inches-based sizing as A.
+        $sheet->getColumnDimension('V')->setWidth(0.06, CssDimension::UOM_INCHES);
         for ($i = 1; $i <= 35; $i++) {
             $sheet->getRowDimension($i)->setRowHeight($i === 7 ? 5.0 : 21.0);
         }
@@ -610,10 +613,11 @@ function generate_final_report_card_excel($input) {
             }
         }
 
-        // Student photo: V3:Z6 (5 cols x 4 rows, matching the personal-details
-        // grid's height), scaled to fit within that box preserving aspect
-        // ratio and centered, same reasoning as the watermark above. Frame
-        // is drawn regardless of whether a photo exists.
+        // Student photo: V3:Z6 (the thin V gutter + 4 normal-width columns
+        // W-Z, 4 rows tall matching the personal-details grid's height),
+        // scaled to fit within that box preserving aspect ratio and centered
+        // both horizontally and vertically, same reasoning as the watermark
+        // above. Frame is drawn regardless of whether a photo exists.
         $sheet->mergeCells('V3:Z6');
         rc_style($sheet, 'V3:Z6', ['border' => 'outline']);
         if (!empty($student['photo'])) {
@@ -622,7 +626,7 @@ function generate_final_report_card_excel($input) {
                 $photoBytes = isset($photoParts[1]) ? base64_decode($photoParts[1]) : false;
                 $photoImage = $photoBytes !== false ? @imagecreatefromstring($photoBytes) : false;
                 if ($photoImage !== false) {
-                    $boxWidthPx = 5 * 5.0 * 7;
+                    $boxWidthPx = (0.06 * 96) + (4 * 5.0 * 7);
                     $boxHeightPx = 4 * 21.0 * 4 / 3;
                     $imgW = imagesx($photoImage);
                     $imgH = imagesy($photoImage);
