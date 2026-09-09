@@ -109,6 +109,18 @@ body {
         border-color: transparent;
         font-weight: 600;
     }
+
+    /* Dropdown groups (Academics/Management/Tools/Utils): expand in place
+       under their toggle instead of floating as a detached popup. */
+    .app-nav .dropdown-menu {
+        position: static;
+        float: none;
+        width: 100%;
+        border: 0;
+        box-shadow: none;
+        padding-left: 1rem;
+        background-color: transparent;
+    }
 }
 
 /* Dark theme (data-bs-theme="dark" on <html>, set server-side from the

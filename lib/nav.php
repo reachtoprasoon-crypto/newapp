@@ -76,3 +76,61 @@ function is_slug_allowed_for_role($slug, $ttype) {
     }
     return false;
 }
+
+// Purely presentational grouping for the top nav's dropdown menus — the
+// access-control list above (get_nav_tabs_for_role) stays the single source
+// of truth for who can see what; this only decides how to arrange it.
+const NAV_GROUP_ORDER = ['Academics', 'Management', 'Tools', 'Utils'];
+const NAV_GROUP_MAP = [
+    'marks' => 'Academics',
+    'report-cards' => 'Academics',
+    'class-roster' => 'Academics',
+    'final-results' => 'Academics',
+
+    'students' => 'Management',
+    'teachers' => 'Management',
+    'term-schedule' => 'Management',
+    'tc' => 'Management',
+    'controls' => 'Management',
+
+    'attendance' => 'Tools',
+    'students-total' => 'Tools',
+    'aptitude' => 'Tools',
+    'communications' => 'Tools',
+    'data-collection' => 'Tools',
+    'question-papers' => 'Tools',
+    'subjective-papers' => 'Tools',
+
+    'activity-log' => 'Utils',
+    'theme' => 'Utils',
+    'database' => 'Utils',
+];
+
+// Buckets a flat tab list (from get_nav_tabs_for_role) into
+// [['group' => 'Academics', 'items' => [...]], ...], preserving
+// NAV_GROUP_ORDER and dropping empty groups. Any tab not yet in
+// NAV_GROUP_MAP (e.g. a newly added slug) falls back to a single
+// ['group' => null, 'items' => [...]] bucket rendered as plain top-level
+// links, so it stays reachable instead of silently disappearing.
+function group_nav_tabs($tabs) {
+    $byGroup = array_fill_keys(NAV_GROUP_ORDER, []);
+    $ungrouped = [];
+    foreach ($tabs as $tab) {
+        $group = NAV_GROUP_MAP[$tab['slug']] ?? null;
+        if ($group !== null && isset($byGroup[$group])) {
+            $byGroup[$group][] = $tab;
+        } else {
+            $ungrouped[] = $tab;
+        }
+    }
+    $result = [];
+    foreach (NAV_GROUP_ORDER as $group) {
+        if (!empty($byGroup[$group])) {
+            $result[] = ['group' => $group, 'items' => $byGroup[$group]];
+        }
+    }
+    if (!empty($ungrouped)) {
+        $result[] = ['group' => null, 'items' => $ungrouped];
+    }
+    return $result;
+}

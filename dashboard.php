@@ -74,12 +74,29 @@ $themeMode = $defaultThemeCval === 1 ? 'dark' : 'light';
     </button>
     <div class="collapse navbar-collapse" id="dashboardNavCollapse">
       <ul class="nav nav-tabs flex-column flex-lg-row w-100" id="dashboardTabs">
-        <?php foreach ($navTabs as $i => $tab): ?>
-          <li class="nav-item">
-            <a class="nav-link <?= $i === 0 ? 'active' : '' ?>" href="#" data-slug="<?= htmlspecialchars($tab['slug']) ?>">
-              <i class="fa-solid <?= htmlspecialchars($tab['icon']) ?> me-1"></i><?= htmlspecialchars($tab['label']) ?>
-            </a>
-          </li>
+        <?php foreach (group_nav_tabs($navTabs) as $navGroup): ?>
+          <?php if ($navGroup['group'] === null): ?>
+            <?php foreach ($navGroup['items'] as $tab): ?>
+              <li class="nav-item">
+                <a class="nav-link" href="#" data-slug="<?= htmlspecialchars($tab['slug']) ?>">
+                  <i class="fa-solid <?= htmlspecialchars($tab['icon']) ?> me-1"></i><?= htmlspecialchars($tab['label']) ?>
+                </a>
+              </li>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><?= htmlspecialchars($navGroup['group']) ?></a>
+              <ul class="dropdown-menu">
+                <?php foreach ($navGroup['items'] as $tab): ?>
+                  <li>
+                    <a class="dropdown-item" href="#" data-slug="<?= htmlspecialchars($tab['slug']) ?>">
+                      <i class="fa-solid <?= htmlspecialchars($tab['icon']) ?> me-1"></i><?= htmlspecialchars($tab['label']) ?>
+                    </a>
+                  </li>
+                <?php endforeach; ?>
+              </ul>
+            </li>
+          <?php endif; ?>
         <?php endforeach; ?>
       </ul>
     </div>
