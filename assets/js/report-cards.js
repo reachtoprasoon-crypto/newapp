@@ -57,6 +57,44 @@
             .forEach(function (r) { reportSel.append($('<option>').val(r.report).text('Report ' + r.report)); });
     }
 
+    // Mirrors rc_default_term_label()/rc_academic_session() in
+    // lib/report_card.php, so the preview shown here matches what the
+    // export/print actually produce. termid IS the term number (terms.termid
+    // is 1/2/3 for FIRST/SECOND/THIRD TERM etc. — termname itself has no
+    // digit to read), same reasoning as the PHP side.
+    function academicSession() {
+        const now = new Date();
+        const startYear = (now.getMonth() + 1) >= 4 ? now.getFullYear() : now.getFullYear() - 1;
+        return startYear + '-' + String(startYear + 1).slice(-2);
+    }
+
+    function defaultTermLabel(sclass, termid, report, termName) {
+        const termNum = parseInt(termid, 10);
+        if (!termNum) return '';
+        const classMatch = String(sclass).match(/^\d+/);
+        const classNum = classMatch ? parseInt(classMatch[0], 10) : 0;
+        const session = academicSession();
+        if (classNum >= 9 && classNum <= 12) {
+            return 'Term-' + termNum + '/' + session;
+        }
+        if (classNum >= 5 && classNum <= 8) {
+            if (parseInt(report, 10) === 1) {
+                return 'U' + report + 'T' + termNum + '/' + session;
+            }
+            return 'Term-' + termNum + '/' + session;
+        }
+        return (termName || '') + ' ' + new Date().getFullYear();
+    }
+
+    function updateDefaultLabel() {
+        const sclass = $('#rc_class').val();
+        const termid = $('#rc_term').val();
+        const report = $('#rc_report').val();
+        if (!sclass || !termid || !report) return;
+        const termName = $('#rc_term option:selected').text();
+        $('#rc_customLabel').val(defaultTermLabel(sclass, termid, report, termName));
+    }
+
     function renderStudentPicker(filter) {
         const container = $('#rc_studentPicker').empty();
         const lower = (filter || '').toLowerCase();
@@ -152,6 +190,7 @@
 
     $('#rc_class').on('change', onClassChange);
     $('#rc_term').on('change', onTermChange);
+    $('#rc_report').on('change', updateDefaultLabel);
     $('#rc_studentSearch').on('input', function () { renderStudentPicker($(this).val()); });
     $('#rc_studentPicker').on('change', '.rc-student-check', function () {
         const sid = parseInt($(this).data('sid'), 10);
