@@ -673,17 +673,19 @@ function generate_final_report_card_excel($input) {
             }
         }
 
-        rc_merge_set($sheet, 8, 2, 6, 'SUBJECTS', ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
+        rc_merge_set($sheet, 8, 2, 7, 'SUBJECTS', ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
 
+        // MM is 2 columns (H-I); TERM 1/TERM 2/AVG/HIC keep their original
+        // 3-column width and positions — only the SUBJECTS/MM boundary moves.
         $metrics = [
-            ['label' => 'MM', 'start' => 7],
-            ['label' => 'TERM 1', 'start' => 10],
-            ['label' => 'TERM 2', 'start' => 13],
-            ['label' => 'AVG', 'start' => 16],
-            ['label' => 'HIC', 'start' => 19],
+            ['label' => 'MM', 'start' => 8, 'span' => 1],
+            ['label' => 'TERM 1', 'start' => 10, 'span' => 2],
+            ['label' => 'TERM 2', 'start' => 13, 'span' => 2],
+            ['label' => 'AVG', 'start' => 16, 'span' => 2],
+            ['label' => 'HIC', 'start' => 19, 'span' => 2],
         ];
         foreach ($metrics as $m) {
-            rc_merge_set($sheet, 8, $m['start'], $m['start'] + 2, $m['label'], ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
+            rc_merge_set($sheet, 8, $m['start'], $m['start'] + $m['span'], $m['label'], ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
         }
 
         $studentMarksByTermschid = [];
@@ -727,9 +729,9 @@ function generate_final_report_card_excel($input) {
             $isLastInGrid = $rIdx === 20;
             $borderSides = $isLastInGrid ? ['left', 'right', 'bottom'] : ['left', 'right'];
 
-            $sheet->mergeCells(rc_range($rIdx, 2, 6));
-            foreach ([7, 10, 13, 16, 19] as $colStart) {
-                $sheet->mergeCells(rc_range($rIdx, $colStart, $colStart + 2));
+            $sheet->mergeCells(rc_range($rIdx, 2, 7));
+            foreach ([[8, 1], [10, 2], [13, 2], [16, 2], [19, 2]] as [$colStart, $span]) {
+                $sheet->mergeCells(rc_range($rIdx, $colStart, $colStart + $span));
             }
 
             $scRef = rc_col_letter(2) . $rIdx;
@@ -750,7 +752,7 @@ function generate_final_report_card_excel($input) {
 
                 $hicKey = (string) $subid;
                 $rowMetrics = [
-                    [7, 100],
+                    [8, 100],
                     [10, $t1 ?? ''],
                     [13, $t2 ?? ''],
                     [16, $avg],
@@ -767,7 +769,7 @@ function generate_final_report_card_excel($input) {
                 }
             } else {
                 $sheet->setCellValue($scRef, '');
-                foreach ([7, 10, 13, 16, 19] as $colStart) {
+                foreach ([8, 10, 13, 16, 19] as $colStart) {
                     $ref = rc_col_letter($colStart) . $rIdx;
                     if ($colStart === 19) {
                         $ref .= ':' . rc_col_letter($colStart + 2) . $rIdx;
@@ -778,10 +780,10 @@ function generate_final_report_card_excel($input) {
         }
 
         $tR = 21;
-        rc_merge_set($sheet, $tR, 2, 6, 'TOTAL', ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_RIGHT, 'border' => 'all']);
-        $totMetrics = [[7, $mmSum], [10, $t1Sum], [13, $t2Sum], [16, $avgSum], [19, (int) round($grandThic)]];
-        foreach ($totMetrics as [$colStart, $val]) {
-            rc_merge_set($sheet, $tR, $colStart, $colStart + 2, $val, ['bold' => true, 'size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
+        rc_merge_set($sheet, $tR, 2, 7, 'TOTAL', ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_RIGHT, 'border' => 'all']);
+        $totMetrics = [[8, $mmSum, 1], [10, $t1Sum, 2], [13, $t2Sum, 2], [16, $avgSum, 2], [19, (int) round($grandThic), 2]];
+        foreach ($totMetrics as [$colStart, $val, $span]) {
+            rc_merge_set($sheet, $tR, $colStart, $colStart + $span, $val, ['bold' => true, 'size' => 14, 'halign' => Alignment::HORIZONTAL_CENTER, 'border' => 'all']);
         }
 
         $sS = 23;
