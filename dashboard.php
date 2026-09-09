@@ -124,6 +124,6 @@ $themeMode = $defaultThemeCval === 1 ? 'dark' : 'light';
     comments: <?= json_encode($comments) ?>,
   };
 </script>
-<script src="/newapp/assets/js/dashboard.js"></script>
+<script src="/newapp/assets/js/dashboard.js?v=<?= filemtime(__DIR__ . '/assets/js/dashboard.js') ?>"></script>
 </body>
 </html>
