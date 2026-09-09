@@ -12,6 +12,40 @@
 
 require_once __DIR__ . '/db.php';
 
+// Indian school-year convention: April-March, e.g. "2026-27".
+function rc_academic_session() {
+    $year = (int) date('Y');
+    $startYear = ((int) date('n') >= 4) ? $year : $year - 1;
+    return $startYear . '-' . substr((string) ($startYear + 1), -2);
+}
+
+// Default TERM/YEAR label (used unless a custom label was typed in):
+// - Classes 9-12: always "Term-<N>/<session>", e.g. "Term-1/2026-27".
+// - Classes 5-8: Report 1 (the unit test) is "U<report>T<N>/<session>", e.g.
+//   "U1T1/2026-27"; Report 2 (the term exam) is "Term-<N>/<session>", same
+//   as senior classes.
+// - Anything else (no parseable term number, or outside those class ranges):
+//   falls back to the original "<term name> <year>" behavior.
+function rc_default_term_label($sclass, $termName, $report) {
+    if (!preg_match('/(\d+)/', (string) $termName, $termMatch)) {
+        return $termName . ' ' . date('Y');
+    }
+    $termNum = $termMatch[1];
+    $classNum = preg_match('/^\d+/', (string) $sclass, $classMatch) ? (int) $classMatch[0] : 0;
+    $session = rc_academic_session();
+
+    if ($classNum >= 9 && $classNum <= 12) {
+        return "Term-{$termNum}/{$session}";
+    }
+    if ($classNum >= 5 && $classNum <= 8) {
+        if ((int) $report === 1) {
+            return "U{$report}T{$termNum}/{$session}";
+        }
+        return "Term-{$termNum}/{$session}";
+    }
+    return $termName . ' ' . date('Y');
+}
+
 // Distinct (term,report) combinations that have a schedule for this class —
 // drives the term/report picker in the report-card export UI.
 // Ports get-student-available-reports-flow.ts.

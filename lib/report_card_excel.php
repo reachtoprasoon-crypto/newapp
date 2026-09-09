@@ -6,6 +6,7 @@
 // equivalent) via Composer.
 
 require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/report_card.php';
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
@@ -132,6 +133,7 @@ function generate_term_report_card_excel($input) {
     $selectedClass = $input['selectedClass'];
     $selectedTermName = $input['selectedTermName'];
     $customTermLabel = $input['customTermLabel'] ?? null;
+    $report = $input['report'] ?? null;
     $watermarkBase64 = $input['watermarkBase64'] ?? null;
     $watermarkSize = $input['watermarkSize'] ?? 350;
     $headerConfig = $input['headerConfig'];
@@ -244,7 +246,7 @@ function generate_term_report_card_excel($input) {
             ['r' => 4, 'items' => [[2, 5, false, $student['schno'] ?? ''], [6, 21, false, $student['sname']], [22, 26, false, rc_roman_numeral($studentDetails['sclass'] ?? '')]]],
             ['r' => 5, 'items' => [[2, 5, true, 'TERM/YEAR'], [6, 9, true, 'ATTENDANCE'], [10, 13, true, 'D.O.B.'], [14, 17, true, 'HOUSE'], [18, 21, true, 'WEIGHT'], [22, 26, true, 'HEIGHT']]],
             ['r' => 6, 'items' => [
-                [2, 5, false, $customTermLabel ?: ($selectedTermName . ' ' . date('Y'))],
+                [2, 5, false, $customTermLabel ?: rc_default_term_label($selectedClass, $selectedTermName, $report)],
                 [6, 9, false, ($studentAttendance['attendance'] ?? 'N/A') . ' / ' . ($studentAttendance['totalattendance'] ?? 'N/A')],
                 [10, 13, false, $studentDetails['dob'] ?? ''],
                 [14, 17, false, $studentDetails['house'] ?? 'N/A'],
@@ -460,7 +462,7 @@ function generate_term_report_card_excel($input) {
         $sheet->mergeCells($legendRange);
         $legendRef = rc_col_letter($sS) . '11';
         $sheet->setCellValue($legendRef, "A - 80% and above\nB - 60 - 79%\nC - 40 - 59%\nD - Below 40%");
-        rc_style($sheet, $legendRef, ['color' => RC_THEME_COLOR, 'size' => 10, 'wrap' => true, 'indent' => 1]);
+        rc_style($sheet, $legendRef, ['color' => RC_THEME_COLOR, 'size' => 10, 'halign' => Alignment::HORIZONTAL_LEFT, 'wrap' => true, 'indent' => 1]);
         // Border must be applied to the full merged range, not just the
         // top-left cell reference, or only the top-left corner renders —
         // getOutline() then draws a clean box around the range's true outer
@@ -487,7 +489,7 @@ function generate_term_report_card_excel($input) {
         rc_style($sheet, rc_col_letter($sS) . '16:' . rc_col_letter($sE) . '21', ['border' => 'outline']);
 
         if ($studentComment && !empty(trim($studentComment['comment'] ?? '')) && trim($studentComment['comment']) !== '_') {
-            $cR = 24;
+            $cR = 23;
             $sheet->setCellValue('B' . $cR, 'COMMENT:');
             rc_style($sheet, 'B' . $cR, ['bold' => true, 'color' => RC_THEME_COLOR, 'size' => 12, 'halign' => Alignment::HORIZONTAL_LEFT, 'valign' => Alignment::VERTICAL_TOP]);
             $sheet->mergeCells('E' . $cR . ':' . rc_col_letter($gridEndCol) . ($cR + 2));
@@ -758,7 +760,7 @@ function generate_final_report_card_excel($input) {
         $sheet->mergeCells($legendRange);
         $legendRef = rc_col_letter($sS) . '11';
         $sheet->setCellValue($legendRef, "A - 80% and above\nB - 60 - 79%\nC - 40 - 59%\nD - Below 40%");
-        rc_style($sheet, $legendRef, ['color' => RC_THEME_COLOR, 'size' => 10, 'wrap' => true, 'indent' => 1]);
+        rc_style($sheet, $legendRef, ['color' => RC_THEME_COLOR, 'size' => 10, 'halign' => Alignment::HORIZONTAL_LEFT, 'wrap' => true, 'indent' => 1]);
         // See the matching comment in generate_term_report_card_excel() above.
         rc_style($sheet, $legendRange, ['border' => 'outline']);
 

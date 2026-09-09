@@ -22,7 +22,13 @@ function is_staff() {
 }
 
 // Page-context guard: redirects to login on failure. Call at the top of dashboard pages.
+// Also marks the response non-cacheable so the browser's back/forward cache
+// can't redisplay a stale authenticated page (nav bar included) after the
+// session has ended — without this, hitting Back post-logout could show the
+// last-rendered dashboard straight from cache instead of re-checking login.
 function require_login_page() {
+    header('Cache-Control: no-store, no-cache, must-revalidate');
+    header('Pragma: no-cache');
     if (!is_logged_in()) {
         header('Location: /newapp/login.php');
         exit;
